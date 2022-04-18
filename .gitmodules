@@ -1,0 +1,3 @@
+[submodule "Milky/vendor/spdlog"]
+	path = Milky/vendor/spdlog
+	url = https://github.com/gabime/spdlog
