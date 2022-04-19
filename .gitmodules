@@ -4,3 +4,4 @@
 [submodule "Milky/vendor/GLFW"]
 	path = Milky/vendor/GLFW
 	url = https://github.com/Ceriole/glfw
+	ignore = all
