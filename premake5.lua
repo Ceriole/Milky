@@ -12,13 +12,26 @@ workspace "Milky"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
+-- Include directories relative to root folder (solution directory)
+IncludeDir = {}
+IncludeDir["GLFW"] = "Milky/vendor/GLFW/include"
+IncludeDir["Glad"] = "Milky/vendor/Glad/include"
+
+include "Milky/vendor/GLFW"
+include "Milky/vendor/Glad"
+
 project "Milky"
 	location "Milky"
 	kind "SharedLib"
 	language "C++"
+	cppdialect "C++17"
+	staticruntime "Off"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+
+	pchheader "mlpch.h"
+	pchsource "Milky/src/mlpch.cpp"
 
 	files
 	{
@@ -29,18 +42,26 @@ project "Milky"
 	includedirs
 	{
 		"%{prj.name}/src",
-		"%{prj.name}/vendor/spdlog/include"
+		"%{prj.name}/vendor/spdlog/include",
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.Glad}"
+	}
+
+	links
+	{
+		"GLFW",
+		"Glad",
+		"opengl32.lib"
 	}
 
 	filter "system:windows"
-		cppdialect "C++17"
-		staticruntime "On"
 		systemversion "latest"
 
 		defines
 		{
 			"ML_PLATFORM_WINDOWS",
-			"ML_BUILD_DLL"
+			"ML_BUILD_DLL",
+			"GLFW_INCLUDE_NONE"
 		}
 
 		postbuildcommands
@@ -50,14 +71,17 @@ project "Milky"
 
 	filter "configurations:Debug"
 		defines "ML_DEBUG"
+		runtime "Debug"
 		symbols "On"
 
 	filter "configurations:Release"
 		defines "ML_RELEASE"
+		runtime "Release"
 		optimize "On"
 
 	filter "configurations:Dist"
 		defines "ML_DIST"
+		runtime "Release"
 		optimize "On"
 
 project "Sandbox"
@@ -87,7 +111,7 @@ project "Sandbox"
 
 	filter "system:windows"
 		cppdialect "C++17"
-		staticruntime "On"
+		staticruntime "Off"
 		systemversion "latest"
 
 		defines
@@ -97,12 +121,15 @@ project "Sandbox"
 
 	filter "configurations:Debug"
 		defines "ML_DEBUG"
+		runtime "Debug"
 		symbols "On"
 
 	filter "configurations:Release"
 		defines "ML_RELEASE"
+		runtime "Release"
 		optimize "On"
 
 	filter "configurations:Dist"
 		defines "ML_DIST"
+		runtime "Release"
 		optimize "On"

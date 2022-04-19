@@ -1,6 +1,7 @@
-#include "Log.h"
+#include "mlpch.h"
+#include "Milky/Log.h"
 
-#include "spdlog/sinks/stdout_color_sinks.h"
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 namespace Milky {
 

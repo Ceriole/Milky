@@ -2,8 +2,6 @@
 
 #include "Event.h"
 
-#include <sstream>
-
 namespace Milky {
 
 	class MILKY_API MouseMovedEvent : public Event
@@ -33,7 +31,7 @@ namespace Milky {
 	{
 	public:
 		MouseScrolledEvent(float xOffset, float yOffset)
-			: m_XOffset(x), m_YOffset(y)
+			: m_XOffset(xOffset), m_YOffset(yOffset)
 		{}
 
 		inline float GetXOffset() const { return m_XOffset; }

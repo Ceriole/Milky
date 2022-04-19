@@ -1,9 +1,8 @@
 #pragma once
 
-#include "Milky/Core.h"
+#include "mlpch.h"
 
-#include <string>
-#include <functional>
+#include "Milky/Core.h"
 
 namespace Milky {
 
@@ -45,8 +44,8 @@ namespace Milky {
 		{
 			return GetCategoryFlags() & category;
 		}
-	protected:
-		bool m_Handled = false;
+
+		bool Handled = false;
 	};
 
 	class EventDispatcher
@@ -63,7 +62,7 @@ namespace Milky {
 		{
 			if (m_Event.GetEventType() == T::GetStaticType())
 			{
-				m_Event.m_Handled = func(*(T*)&m_Event);
+				m_Event.Handled = func(*(T*)&m_Event);
 				return true;
 			}
 			return false;

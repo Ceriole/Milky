@@ -2,8 +2,6 @@
 
 #include "Event.h"
 
-#include <sstream>
-
 namespace Milky {
 
 	class MILKY_API KeyEvent : public Event

@@ -7,6 +7,12 @@
     <Filter Include="Milky\Events">
       <UniqueIdentifier>{EFF1E79F-DB54-7744-84DA-AFFA701C43C7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Platform">
+      <UniqueIdentifier>{2AC788B4-1694-E3BF-3FAD-D1672BD9184E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform\Windows">
+      <UniqueIdentifier>{64FBD71A-50F4-F66C-7926-DCF1657ED678}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Milky.h" />
@@ -31,16 +37,39 @@
     <ClInclude Include="src\Milky\Events\MouseEvent.h">
       <Filter>Milky\Events</Filter>
     </ClInclude>
+    <ClInclude Include="src\Milky\Layer.h">
+      <Filter>Milky</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Milky\LayerStack.h">
+      <Filter>Milky</Filter>
+    </ClInclude>
     <ClInclude Include="src\Milky\Log.h">
       <Filter>Milky</Filter>
     </ClInclude>
+    <ClInclude Include="src\Milky\Window.h">
+      <Filter>Milky</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Windows\WindowsWindow.h">
+      <Filter>Platform\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mlpch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Milky\Application.cpp">
       <Filter>Milky</Filter>
     </ClCompile>
+    <ClCompile Include="src\Milky\Layer.cpp">
+      <Filter>Milky</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Milky\LayerStack.cpp">
+      <Filter>Milky</Filter>
+    </ClCompile>
     <ClCompile Include="src\Milky\Log.cpp">
       <Filter>Milky</Filter>
     </ClCompile>
+    <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp">
+      <Filter>Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mlpch.cpp" />
   </ItemGroup>
 </Project>
