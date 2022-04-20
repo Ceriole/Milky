@@ -16,9 +16,11 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 IncludeDir = {}
 IncludeDir["GLFW"] = "Milky/vendor/GLFW/include"
 IncludeDir["Glad"] = "Milky/vendor/Glad/include"
+IncludeDir["ImGui"] = "Milky/vendor/imgui"
 
 include "Milky/vendor/GLFW"
 include "Milky/vendor/Glad"
+include "Milky/vendor/imgui"
 
 project "Milky"
 	location "Milky"
@@ -44,13 +46,15 @@ project "Milky"
 		"%{prj.name}/src",
 		"%{prj.name}/vendor/spdlog/include",
 		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.Glad}"
+		"%{IncludeDir.Glad}",
+		"%{IncludeDir.ImGui}"
 	}
 
 	links
 	{
 		"GLFW",
 		"Glad",
+		"ImGui",
 		"opengl32.lib"
 	}
 
@@ -61,7 +65,8 @@ project "Milky"
 		{
 			"ML_PLATFORM_WINDOWS",
 			"ML_BUILD_DLL",
-			"GLFW_INCLUDE_NONE"
+			"GLFW_INCLUDE_NONE",
+			"IMGUI_IMPL_OPENGL_LOADER_CUSTOM"
 		}
 
 		postbuildcommands
