@@ -11,12 +11,13 @@ public:
 
 	void OnUpdate() override
 	{
-		// ML_INFO("ExampleLayer::OnUpdate");
+		if (Milky::Input::IsKeyPressed(ML_KEY_TAB))
+			ML_TRACE("Tab is pressed!");
 	}
 
 	void OnEvent(Milky::Event& event) override
 	{
-		// ML_TRACE("ExampleLayer::OnEvent({0})", event);
+		
 	}
 };
 

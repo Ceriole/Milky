@@ -18,9 +18,11 @@ IncludeDir["GLFW"] = "Milky/vendor/GLFW/include"
 IncludeDir["Glad"] = "Milky/vendor/Glad/include"
 IncludeDir["ImGui"] = "Milky/vendor/imgui"
 
-include "Milky/vendor/GLFW"
-include "Milky/vendor/Glad"
-include "Milky/vendor/imgui"
+group "Dependencies"
+	include "Milky/vendor/GLFW"
+	include "Milky/vendor/Glad"
+	include "Milky/vendor/imgui"
+group ""
 
 project "Milky"
 	location "Milky"
@@ -71,7 +73,7 @@ project "Milky"
 
 		postbuildcommands
 		{
-			("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/Sandbox")
+			("{COPY} %{cfg.buildtarget.relpath} \"../bin/" .. outputdir .. "/Sandbox/\"")
 		}
 
 	filter "configurations:Debug"

@@ -5,21 +5,26 @@
 
 #include <glad/glad.h>
 
+#include <GLFW/glfw3.h>
+#include "Input.h"
+
 namespace Milky {
 
 	Application* Application::s_Instance = nullptr;
 
 	Application::Application()
 	{
-		ML_CORE_ASSERT(s_Instance, "Only one instance of Application is allowed!");
+		ML_CORE_ASSERT(!s_Instance, "Only one instance of Application is allowed!");
 		s_Instance = this;
 
 		m_Window = std::unique_ptr<Window>(Window::Create());
 		m_Window->SetEveventCallback(ML_BIND_EVENT_FN(Application::OnEvent));
+
 	}
 
 	Application::~Application()
 	{
+		s_Instance = nullptr;
 	}
 
 	void Application::PushLayer(Layer* layer)
