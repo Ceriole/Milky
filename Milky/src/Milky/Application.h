@@ -7,6 +7,8 @@
 #include "Events/Event.h"
 #include "Milky/Events/ApplicationEvent.h"
 
+#include "Milky/ImGui/ImGuiLayer.h"
+
 namespace Milky {
 	
 	class MILKY_API Application
@@ -29,6 +31,7 @@ namespace Milky {
 		bool OnWindowClose(WindowCloseEvent& e);
 
 		std::unique_ptr<Window> m_Window;
+		ImGuiLayer* m_ImGuiLayer;
 		bool m_Running = true;
 		LayerStack m_LayerStack;
 	private:

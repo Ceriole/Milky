@@ -10,4 +10,4 @@
 **.vcxproj.user
 
 # Files
-*.ini
+imgui.ini
