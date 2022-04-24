@@ -1,16 +1,12 @@
 [submodule "Milky/vendor/spdlog"]
 	path = Milky/vendor/spdlog
 	url = https://github.com/gabime/spdlog
-	ignore = all
 [submodule "Milky/vendor/GLFW"]
 	path = Milky/vendor/GLFW
 	url = https://github.com/Ceriole/glfw
-	ignore = all
 [submodule "Milky/vendor/imgui"]
 	path = Milky/vendor/imgui
 	url = https://github.com/Ceriole/imgui/
-	ignore = all
 [submodule "Milky/vendor/glm"]
 	path = Milky/vendor/glm
 	url = https://github.com/g-truc/glm
-	ignore = all
