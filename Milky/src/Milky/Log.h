@@ -1,13 +1,12 @@
 #pragma once
 
 #include "Core.h"
-
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
 
 namespace Milky {
 	
-	class MILKY_API Log
+	class Log
 	{
 	public:
 		static void Init();

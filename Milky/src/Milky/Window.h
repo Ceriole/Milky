@@ -20,7 +20,7 @@ namespace Milky {
 	};
 
 	// Interface for a window on a desktop app
-	class MILKY_API Window
+	class  Window
 	{
 	public:
 		using EventCallbackFn = std::function<void(Event&)>;

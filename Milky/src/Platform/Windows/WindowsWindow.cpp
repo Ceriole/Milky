@@ -1,11 +1,13 @@
 #include "mlpch.h"
 #include "WindowsWindow.h"
 
-#include "Milky/Events/KeyEvent.h"
-#include "Milky/Events/MouseEvent.h"
 #include "Milky/Events/ApplicationEvent.h"
+#include "Milky/Events/MouseEvent.h"
+#include "Milky/Events/KeyEvent.h"
 
-#include <glad/glad.h>
+#include "Platform/OpenGL/OpenGLContext.h"
+
+#include <GLFW/glfw3.h>
 
 namespace Milky {
 
@@ -42,15 +44,15 @@ namespace Milky {
 		if (!s_GLFWInitalized)
 		{
 			int success = glfwInit();
-			ML_CORE_ASSERT(success, "Failed to initialize GLFW!");
-
+			ML_CORE_ASSERT(success, "Could not initalize GLFW!");
+			glfwSetErrorCallback(GLFWErrorCallback);
 			s_GLFWInitalized = true;
 		}
 
 		m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
-		glfwMakeContextCurrent(m_Window);
-		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-		ML_CORE_ASSERT(status, "Failed to initialize Glad!");
+		m_Context = new OpenGLContext(m_Window);
+		m_Context->Init();
+
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 		SetVSync(true);
 
@@ -140,8 +142,6 @@ namespace Milky {
 				MouseMovedEvent event((float)x, (float)y);
 				data.EventCallback(event);
 			});
-
-		glfwSetErrorCallback(GLFWErrorCallback);
 	}
 
 	void WindowsWindow::Shutdown()
@@ -151,8 +151,7 @@ namespace Milky {
 	
 	void WindowsWindow::OnUpdate()
 	{
-		glfwPollEvents();
-		glfwSwapBuffers(m_Window);
+		m_Context->SwapBuffers();
 	}
 
 	void WindowsWindow::SetVSync(bool enabled)

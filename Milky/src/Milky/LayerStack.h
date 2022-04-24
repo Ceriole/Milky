@@ -7,7 +7,7 @@
 
 namespace Milky {
 	
-	class MILKY_API LayerStack
+	class  LayerStack
 	{
 	public:
 		LayerStack();

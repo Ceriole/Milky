@@ -4,7 +4,7 @@
 
 namespace Milky {
 
-	class MILKY_API KeyEvent : public Event
+	class  KeyEvent : public Event
 	{
 	public:
 		inline int GetKeyCode() const { return m_KeyCode; }
@@ -18,7 +18,7 @@ namespace Milky {
 		int m_KeyCode;
 	};
 
-	class MILKY_API KeyPressedEvent : public KeyEvent
+	class  KeyPressedEvent : public KeyEvent
 	{
 	public:
 		KeyPressedEvent(int keycode, int repeatcount)
@@ -39,7 +39,7 @@ namespace Milky {
 		int m_RepeatCount;
 	};
 
-	class MILKY_API KeyReleasedEvent : public KeyEvent
+	class  KeyReleasedEvent : public KeyEvent
 	{
 	public:
 		KeyReleasedEvent(int keycode)
@@ -56,7 +56,7 @@ namespace Milky {
 		EVENT_CLASS_TYPE(KeyReleased)
 	};
 
-	class MILKY_API KeyTypedEvent : public KeyEvent
+	class  KeyTypedEvent : public KeyEvent
 	{
 	public:
 		KeyTypedEvent(int keycode)

@@ -75,7 +75,6 @@ project "Milky"
 		defines
 		{
 			"ML_PLATFORM_WINDOWS",
-			"ML_BUILD_DLL",
 			"GLFW_INCLUDE_NONE"
 		}
 

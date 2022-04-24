@@ -8,7 +8,7 @@
 
 namespace Milky {
 
-	class MILKY_API ImGuiLayer : public Layer
+	class  ImGuiLayer : public Layer
 	{
 	public:
 		ImGuiLayer();
