@@ -17,6 +17,11 @@ namespace Milky {
 		glfwMakeContextCurrent(m_WindowHandle);
 		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		ML_CORE_ASSERT(status, "Failed to initialize Glad!");
+
+		ML_CORE_INFO("OpenGL Context:");
+		ML_CORE_INFO("\tVendor: {0}", glGetString(GL_VENDOR));
+		ML_CORE_INFO("\tRenderer: {0}", glGetString(GL_RENDERER));
+		ML_CORE_INFO("\tVersion: {0}", glGetString(GL_VERSION));
 	}
 
 	void OpenGLContext::SwapBuffers()
@@ -25,5 +30,14 @@ namespace Milky {
 		glfwSwapBuffers(m_WindowHandle);
 	}
 
+	std::string OpenGLContext::GetInfoString()
+	{
+		std::stringstream ss;
+		ss << "OpenGL Context:";
+		ss << "\tVendor: " << glGetString(GL_VENDOR);
+		ss << "\tRenderer: " << glGetString(GL_RENDERER);
+		ss << "\tVersion: " << glGetString(GL_VERSION);
+		return ss.str();
+	}
 
 }

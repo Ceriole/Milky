@@ -1,13 +1,6 @@
 #include "mlpch.h"
 #include "Milky/Application.h"
 
-#include "Milky/Log.h"
-
-#include <glad/glad.h>
-
-#include "Milky/Input.h"
-
-
 namespace Milky {
 
 	Application* Application::s_Instance = nullptr;
@@ -65,9 +58,6 @@ namespace Milky {
 	{
 		while (m_Running)
 		{
-			glClearColor(0.2f, 0.4f, 0.1f, 1);
-			glClear(GL_COLOR_BUFFER_BIT);
-
 			if (!m_Minimized)
 			{
 				for (Layer* layer : m_LayerStack)
@@ -76,6 +66,7 @@ namespace Milky {
 				m_ImGuiLayer->Begin();
 				for (Layer* layer : m_LayerStack)
 					layer->OnImGuiRender();
+
 				m_ImGuiLayer->End();
 			}
 			m_Window->OnUpdate();

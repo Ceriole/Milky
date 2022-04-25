@@ -17,4 +17,3 @@
 #ifdef ML_PLATFORM_WINDOWS
 	#include <Windows.h>
 #endif
-

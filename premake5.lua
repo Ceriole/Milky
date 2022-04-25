@@ -1,4 +1,6 @@
 -- premake5.lua Milky
+include "./vendor/premake/premake_customization/solution_items.lua"
+
 workspace "Milky"
 	architecture "x64"
 	startproject "Sandbox"
@@ -8,6 +10,16 @@ workspace "Milky"
 		"Debug",
 		"Release",
 		"Dist"
+	}
+
+	solution_items
+	{
+		".editorconfig"
+	}
+
+	flags
+	{
+		"MultiProcessorCompile"
 	}
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
@@ -36,7 +48,7 @@ project "Milky"
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
 	pchheader "mlpch.h"
-	pchsource "Milky/src/mlpch.cpp"
+	pchsource "%{prj.name}/src/mlpch.cpp"
 
 	files
 	{
