@@ -9,6 +9,8 @@
 #include "Milky/Layer.h"
 #include "Milky/Log.h"
 
+#include "Milky/Core/Timestep.h"
+
 #include "Milky/Input.h"
 #include "Milky/KeyCodes.h"
 #include "Milky/MouseButtonCodes.h"

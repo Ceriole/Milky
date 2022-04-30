@@ -1,15 +1,18 @@
 #include <Milky.h>
 
+#include <Platform/OpenGL/OpenGLShader.h>
+
 #include <imgui/imgui.h>
 
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
 class ExampleLayer : public Milky::Layer
 {
 public:
 	ExampleLayer()
-		: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f)
+		: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f), m_CameraPosition(0.0f)
 	{
 		m_VertexArray.reset(Milky::VertexArray::Create());
 
@@ -19,7 +22,7 @@ public:
 			 0.0f,  0.5f, 0.0f, 0.8f, 0.8f, 0.2f, 1.0f,
 		};
 
-		std::shared_ptr<Milky::VertexBuffer> vertexBuffer;
+		Milky::Ref<Milky::VertexBuffer> vertexBuffer;
 		vertexBuffer.reset(Milky::VertexBuffer::Create(vertices, sizeof(vertices)));
 		vertexBuffer->SetLayout({
 				{ Milky::ShaderDataType::Float3, "a_Position" },
@@ -28,27 +31,28 @@ public:
 		m_VertexArray->AddVertexBuffer(vertexBuffer);
 
 		unsigned int indices[3] = { 0, 1, 2 };
-		std::shared_ptr<Milky::IndexBuffer> indexBuffer;
+		Milky::Ref<Milky::IndexBuffer> indexBuffer;
 		indexBuffer.reset(Milky::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
 		m_VertexArray->SetIndexBuffer(indexBuffer);
 
 		m_SquareVA.reset(Milky::VertexArray::Create());
-		float squareVertices[3 * 7] = {
-			-0.75f, -0.75f, 0.0f,
-			 0.75f, -0.75f, 0.0f,
-			 0.75f,  0.75f, 0.0f,
-			-0.75f,  0.75f, 0.0f
+		float squareVertices[4 * 5] = {
+			-0.5f, -0.5f, 0.0f, 0, 0,
+			 0.5f, -0.5f, 0.0f, 1, 0,
+			 0.5f,  0.5f, 0.0f, 1, 1,
+			-0.5f,  0.5f, 0.0f, 0, 1
 		};
 
-		std::shared_ptr<Milky::VertexBuffer> squareVB;
+		Milky::Ref<Milky::VertexBuffer> squareVB;
 		squareVB.reset(Milky::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
 		squareVB->SetLayout({
-				{ Milky::ShaderDataType::Float3, "a_Position" }
+				{ Milky::ShaderDataType::Float3, "a_Position" },
+				{ Milky::ShaderDataType::Float2, "a_TexCoord" }
 			});
 		m_SquareVA->AddVertexBuffer(squareVB);
 
 		unsigned int squareIndices[6] = { 0, 1, 2, 2, 3, 0 };
-		std::shared_ptr<Milky::IndexBuffer> squareIB;
+		Milky::Ref<Milky::IndexBuffer> squareIB;
 		squareIB.reset(Milky::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t)));
 		m_SquareVA->SetIndexBuffer(squareIB);
 
@@ -59,6 +63,7 @@ public:
 				layout(location = 1) in vec4 a_Color;
 
 				uniform mat4 u_ViewProjection;
+				uniform mat4 u_Transform;
 
 				out vec3 v_Position;
 				out vec4 v_Color;
@@ -67,7 +72,7 @@ public:
 				{
 					v_Position = a_Position;
 					v_Color = a_Color;
-					gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+					gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);
 				}
 			)";
 
@@ -85,105 +90,166 @@ public:
 				}
 			)";
 
-		m_Shader.reset(new Milky::Shader(vertexSrc, fragmentSrc));
+		m_Shader.reset(Milky::Shader::Create(vertexSrc, fragmentSrc));
 
-		std::string blueShaderVertexSrc = R"(
+		std::string flatColorShaderVertexSrc = R"(
 				#version 330 core
 				
 				layout(location = 0) in vec3 a_Position;
 
 				uniform mat4 u_ViewProjection;
+				uniform mat4 u_Transform;
 
 				out vec3 v_Position;
 				
 				void main()
 				{
 					v_Position = a_Position;
-					gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+					gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);
 				}
 			)";
 
-		std::string blueShaderFragmentSrc = R"(
+		std::string flatColorShaderFragmentSrc = R"(
 				#version 330 core
 				
 				layout(location = 0) out vec4 o_Color;
 		
 				in vec3 v_Position;
 
+				uniform vec3 u_Color;
+
 				void main()
 				{
-					o_Color = vec4(0.2, 0.2, 0.8, 1);
+					o_Color = vec4(u_Color, 1);
 				}
 			)";
 
-		m_BlueShader.reset(new Milky::Shader(blueShaderVertexSrc, blueShaderFragmentSrc));
+		m_FlatColorShader.reset(Milky::Shader::Create(flatColorShaderVertexSrc, flatColorShaderFragmentSrc));
+
+		std::string textureShaderVertexSrc = R"(
+				#version 330 core
+				
+				layout(location = 0) in vec3 a_Position;
+				layout(location = 1) in vec2 a_TexCoord;
+
+				uniform mat4 u_ViewProjection;
+				uniform mat4 u_Transform;
+
+				out vec2 v_TexCoord;
+				
+				void main()
+				{
+					v_TexCoord = a_TexCoord;
+					gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);
+				}
+			)";
+
+		std::string textureShaderFragmentSrc = R"(
+				#version 330 core
+				
+				layout(location = 0) out vec4 o_Color;
+		
+				in vec2 v_TexCoord;
+
+				uniform vec3 u_Color;
+
+				void main()
+				{
+					o_Color = vec4(v_TexCoord, 0, 1);
+				}
+			)";
+
+		m_TextureShader.reset(Milky::Shader::Create(textureShaderVertexSrc, textureShaderFragmentSrc));
 	}
 
-	void OnUpdate() override
+	void OnUpdate(Milky::Timestep ts) override
 	{
-		Milky::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.2f, 1 });
+		if (Milky::Input::IsKeyPressed(ML_KEY_LEFT))
+			m_CameraPosition.x -= m_CameraMoveSpeed * ts;
+		else if (Milky::Input::IsKeyPressed(ML_KEY_RIGHT))
+			m_CameraPosition.x += m_CameraMoveSpeed * ts;
+		if (Milky::Input::IsKeyPressed(ML_KEY_UP))
+			m_CameraPosition.y += m_CameraMoveSpeed * ts;
+		else if (Milky::Input::IsKeyPressed(ML_KEY_DOWN))
+			m_CameraPosition.y -= m_CameraMoveSpeed * ts;
+
+		if (Milky::Input::IsKeyPressed(ML_KEY_PAGE_UP))
+			m_CameraRotation += m_CameraRotationSpeed * ts;
+		else if (Milky::Input::IsKeyPressed(ML_KEY_PAGE_DOWN))
+			m_CameraRotation -= m_CameraRotationSpeed * ts;
+
+		Milky::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		Milky::RenderCommand::Clear();
+
+		m_Camera.SetPosition(m_CameraPosition);
+		m_Camera.SetRotation(m_CameraRotation);
 
 		Milky::Renderer::BeginScene(m_Camera); // Lights, cameras, action!
 
-		Milky::Renderer::Submit(m_BlueShader, m_SquareVA);
-		Milky::Renderer::Submit(m_Shader, m_VertexArray);
+		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+
+		glm::vec3 redColor(0.8f, 0.2f, 0.3f);
+		glm::vec3 blueColor(0.2f, 0.3f, 0.8f);
+
+		std::dynamic_pointer_cast<Milky::OpenGLShader>(m_FlatColorShader)->Bind();
+		std::dynamic_pointer_cast<Milky::OpenGLShader>(m_FlatColorShader)->UploadUniform("u_Color", m_SquareColor);
+		// Square Grid
+		for (int y = 0; y < 20; y++)
+		{
+			for (int x = 0; x < 20; x++)
+			{
+				glm::vec3 pos(x * 0.11f, y * 0.11f, 0.0f);
+				glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
+				Milky::Renderer::Submit(m_FlatColorShader, m_SquareVA, transform);
+			}
+		}
+
+		Milky::Renderer::Submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+		
+		// Triangle
+		// Milky::Renderer::Submit(m_Shader, m_VertexArray);
 
 		Milky::Renderer::EndScene(); // And cut!
 	}
 
 	void OnEvent(Milky::Event& event) override
 	{
-		
+		Milky::EventDispatcher dispatcher = Milky::EventDispatcher(event);
+
+		dispatcher.Dispatch<Milky::KeyPressedEvent>([](Milky::KeyPressedEvent& e) {
+			if (e.GetKeyCode() == ML_KEY_ESCAPE)
+			{
+				Milky::Application::Get().Close();
+				return true;
+			}
+			return false;
+		});
 	}
 
 	void OnImGuiRender() override
 	{
-		ImGui::Begin("Camera Control");
+		ImGui::Begin("Settings");
 
-		glm::vec3 camPos = m_Camera.GetPosition();
-		float camRot = m_Camera.GetRotation();
+		ImGui::ColorEdit3("Square Color", glm::value_ptr(m_SquareColor));
 
-		if (ImGui::BeginPopupContextItem("PosResetPopup"))
-		{
-			if (ImGui::Selectable("Reset")) camPos = {0,0,0};
-			if (ImGui::Selectable("Reset X")) camPos.x = 0;
-			if (ImGui::Selectable("Reset Y")) camPos.y = 0;
-			ImGui::EndPopup();
-		}
-
-		if (ImGui::BeginPopupContextItem("RotResetPopup"))
-		{
-			if (ImGui::Selectable("Reset")) camRot = 0;
-
-			ImGui::EndPopup();
-		}
-
-
-		ImGui::DragFloat2("Camera Position", glm::value_ptr(camPos), 0.01f, -5.0f, 5.0f);
-		ImGui::OpenPopupOnItemClick("PosResetPopup", ImGuiPopupFlags_MouseButtonRight);
-		ImGui::DragFloat("Camera Rotation", &camRot, 0.01f, 0.0f, 2.0f * glm::pi<float>());
-		ImGui::OpenPopupOnItemClick("RotResetPopup", ImGuiPopupFlags_MouseButtonRight);
-
-		if (ImGui::Button("Reset Camera"))
-		{
-			camPos = { 0,0,0 };
-			camRot = 0;
-		}
-
-		m_Camera.SetPosition(camPos);
-		m_Camera.SetRotation(camRot);
-		
 		ImGui::End();
 	}
-private:
-	std::shared_ptr<Milky::Shader> m_Shader;
-	std::shared_ptr<Milky::VertexArray> m_VertexArray;
 
-	std::shared_ptr<Milky::Shader> m_BlueShader;
-	std::shared_ptr<Milky::VertexArray> m_SquareVA;
+private:
+	Milky::Ref<Milky::Shader> m_Shader;
+	Milky::Ref<Milky::VertexArray> m_VertexArray;
+
+	Milky::Ref<Milky::Shader> m_FlatColorShader, m_TextureShader;
+	Milky::Ref<Milky::VertexArray> m_SquareVA;
 
 	Milky::OrthographicCamera m_Camera;
+	glm::vec3 m_CameraPosition;
+	float m_CameraMoveSpeed = 5.0f;
+	
+	float m_CameraRotation = 0.0f;
+	float m_CameraRotationSpeed = 180.0f;
+
+	glm::vec3 m_SquareColor = {0.2f, 0.3f, 0.8f};
 };
 
 class SandboxApp : public Milky::Application

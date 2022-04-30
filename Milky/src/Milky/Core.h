@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #ifdef ML_DEBUG
 	#define ML_ENABLE_ASSERTS
 #endif
@@ -12,6 +14,21 @@
 	#define ML_CORE_ASSERT(x, ...)
 #endif
 
+#define ML_EXPAND_MACRO(x) x
+#define ML_STRINGIFY_MACRO(x) #x
+
 #define BIT(x) (1 << x)
 
 #define ML_BIND_EVENT_FN(fn) std::bind(&fn, this, std::placeholders::_1)
+
+#include "Milky/Log.h"
+
+namespace Milky {
+
+	template<typename T>
+	using Scope = std::unique_ptr<T>;
+
+	template<typename T>
+	using Ref = std::shared_ptr<T>;
+
+}

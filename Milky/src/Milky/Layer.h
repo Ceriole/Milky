@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Milky/Core.h"
+#include "Milky/Core/Timestep.h"
 #include "Milky/Events/Event.h"
 
 namespace Milky {
@@ -13,7 +14,7 @@ namespace Milky {
 
 		virtual void OnAttach() {};
 		virtual void OnDetach() {};
-		virtual void OnUpdate() {};
+		virtual void OnUpdate(Timestep ts) {};
 		virtual void OnImGuiRender() {};
 		virtual void OnEvent(Event& event) {};
 
