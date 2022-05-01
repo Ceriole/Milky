@@ -11,12 +11,12 @@ namespace Milky {
 	// Vertex Buffer /////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////
 
-	VertexBuffer* VertexBuffer::Create(float* vertices, uint32_t size)
+	Ref<VertexBuffer> VertexBuffer::Create(float* vertices, uint32_t size)
 	{
 		switch (Renderer::GetAPI())
 		{
 		case RendererAPI::API::None : ML_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-		case RendererAPI::API::OpenGL: return new OpenGLVertexBuffer(vertices, size);
+		case RendererAPI::API::OpenGL: return CreateRef<OpenGLVertexBuffer>(vertices, size);
 		}
 
 		ML_CORE_ASSERT(false, "Unknown RendererAPI!");
@@ -27,12 +27,12 @@ namespace Milky {
 	// Index Buffer //////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////
 
-	IndexBuffer* IndexBuffer::Create(uint32_t* vertices, uint32_t size)
+	Ref<IndexBuffer> IndexBuffer::Create(uint32_t* vertices, uint32_t size)
 	{
 		switch (Renderer::GetAPI())
 		{
 		case RendererAPI::API::None: ML_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-		case RendererAPI::API::OpenGL: return new OpenGLIndexBuffer(vertices, size);
+		case RendererAPI::API::OpenGL: return  CreateRef<OpenGLIndexBuffer>(vertices, size);
 		}
 
 		ML_CORE_ASSERT(false, "Unknown RendererAPI!");

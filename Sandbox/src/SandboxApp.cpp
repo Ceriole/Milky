@@ -1,4 +1,5 @@
 #include <Milky.h>
+#include <Milky/Core/EntryPoint.h>
 
 #include <Platform/OpenGL/OpenGLShader.h>
 
@@ -7,13 +8,15 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Sandbox2D.h"
+
 class ExampleLayer : public Milky::Layer
 {
 public:
 	ExampleLayer()
 		: Layer("Example"), m_CameraController(1280.0f / 720.0f, true)
 	{
-		m_VertexArray.reset(Milky::VertexArray::Create());
+		m_VertexArray = Milky::VertexArray::Create();
 
 		float vertices[3 * 7] = {
 			-0.5f, -0.5f, 0.0f, 0.8f, 0.2f, 0.8f, 1.0f,
@@ -22,7 +25,7 @@ public:
 		};
 
 		Milky::Ref<Milky::VertexBuffer> vertexBuffer;
-		vertexBuffer.reset(Milky::VertexBuffer::Create(vertices, sizeof(vertices)));
+		vertexBuffer = Milky::VertexBuffer::Create(vertices, sizeof(vertices));
 		vertexBuffer->SetLayout({
 				{ Milky::ShaderDataType::Float3, "a_Position" },
 				{ Milky::ShaderDataType::Float4, "a_Color" }
@@ -31,10 +34,10 @@ public:
 
 		unsigned int indices[3] = { 0, 1, 2 };
 		Milky::Ref<Milky::IndexBuffer> indexBuffer;
-		indexBuffer.reset(Milky::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
+		indexBuffer = Milky::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
 		m_VertexArray->SetIndexBuffer(indexBuffer);
 
-		m_SquareVA.reset(Milky::VertexArray::Create());
+		m_SquareVA = Milky::VertexArray::Create();
 		float squareVertices[4 * 5] = {
 			-0.5f, -0.5f, 0.0f, 0, 0,
 			 0.5f, -0.5f, 0.0f, 1, 0,
@@ -43,7 +46,7 @@ public:
 		};
 
 		Milky::Ref<Milky::VertexBuffer> squareVB;
-		squareVB.reset(Milky::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
+		squareVB = Milky::VertexBuffer::Create(squareVertices, sizeof(squareVertices));
 		squareVB->SetLayout({
 				{ Milky::ShaderDataType::Float3, "a_Position" },
 				{ Milky::ShaderDataType::Float2, "a_TexCoord" }
@@ -52,7 +55,7 @@ public:
 
 		unsigned int squareIndices[6] = { 0, 1, 2, 2, 3, 0 };
 		Milky::Ref<Milky::IndexBuffer> squareIB;
-		squareIB.reset(Milky::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t)));
+		squareIB = Milky::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t));
 		m_SquareVA->SetIndexBuffer(squareIB);
 
 		std::string vertexSrc = R"(
@@ -128,7 +131,6 @@ public:
 		auto textureShader = m_ShaderLibrary.Load("assets/shaders/Texture.glsl");
 
 		m_Texture = Milky::Texture2D::Create("assets/textures/grid.png");
-		m_CoolBugTexture = Milky::Texture2D::Create("assets/textures/coolbug.png");
 
 		std::dynamic_pointer_cast<Milky::OpenGLShader>(textureShader)->Bind();
 		std::dynamic_pointer_cast<Milky::OpenGLShader>(m_FlatColorShader)->UploadUniform("u_Texture", 0);
@@ -151,9 +153,9 @@ public:
 		std::dynamic_pointer_cast<Milky::OpenGLShader>(m_FlatColorShader)->Bind();
 		std::dynamic_pointer_cast<Milky::OpenGLShader>(m_FlatColorShader)->UploadUniform("u_Color", m_SquareColor);
 		// Square grid
-		for (int y = -25; y < 25; y++)
+		for (int y = 0; y < 20; y++)
 		{
-			for (int x = -25; x < 25; x++)
+			for (int x = 0; x < 20; x++)
 			{
 				glm::vec3 pos(x * 0.11f, y * 0.11f, 0.0f);
 				glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
@@ -165,9 +167,6 @@ public:
 
 		// Textured squares
 		m_Texture->Bind();
-		Milky::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
-
-		m_CoolBugTexture->Bind();
 		Milky::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 		
 		// Triangle
@@ -208,7 +207,7 @@ private:
 	Milky::Ref<Milky::Shader> m_FlatColorShader;
 	Milky::Ref<Milky::VertexArray> m_SquareVA;
 
-	Milky::Ref<Milky::Texture2D> m_Texture, m_CoolBugTexture;
+	Milky::Ref<Milky::Texture2D> m_Texture;
 
 	Milky::OrthographicCameraController m_CameraController;
 
@@ -220,7 +219,8 @@ class SandboxApp : public Milky::Application
 public:
 	SandboxApp()
 	{
-		PushLayer(new ExampleLayer());
+		// PushLayer(new ExampleLayer());
+		PushLayer(new Sandbox2D());
 	}
 
 	~SandboxApp()

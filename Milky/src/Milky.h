@@ -30,7 +30,3 @@
 
 #include "Milky/Renderer/OrthographicCamera.h"
 // ====================================
-
-// = ENTRY POINT ======================
-#include "Milky/Core/EntryPoint.h"
-// ====================================
