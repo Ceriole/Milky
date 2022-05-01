@@ -21,7 +21,7 @@ namespace Milky {
 		virtual float GetMouseXImpl(int button) = 0;
 		virtual float GetMouseYImpl(int button) = 0;
 	private:
-		static Input* s_Instance;
+		static Scope<Input> s_Instance;
 	};
 
 }

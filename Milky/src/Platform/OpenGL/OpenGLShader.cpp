@@ -135,6 +135,8 @@ namespace Milky {
 			glShaderIDs[glShaderIDIndex++] = shader;
 		}
 
+		m_RendererID = program;
+
 		// Link our program
 		glLinkProgram(program);
 
@@ -166,9 +168,10 @@ namespace Milky {
 
 		// Always detach shaders after a successful link.
 		for (auto id : glShaderIDs)
+		{
 			glDetachShader(program, id);
-
-		m_RendererID = program;
+			glDeleteShader(id);
+		}
 	}
 
 	void OpenGLShader::Bind() const

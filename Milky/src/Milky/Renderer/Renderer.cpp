@@ -1,11 +1,11 @@
 #include "mlpch.h"
-#include "Milky/Renderer/Renderer.h"
+#include "Renderer.h"
 
 #include "Platform/OpenGL/OpenGLShader.h"
 
 namespace Milky {
 
-	Renderer::SceneData* Renderer::m_SceneData = new Renderer::SceneData;
+	Scope<Renderer::SceneData> Renderer::m_SceneData = CreateScope<Renderer::SceneData>();
 
 	void Renderer::Init()
 	{

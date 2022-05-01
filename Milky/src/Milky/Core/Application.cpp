@@ -1,5 +1,5 @@
 #include "mlpch.h"
-#include "Milky/Core/Application.h"
+#include "Application.h"
 
 #include "Milky/Renderer/Renderer.h"
 
@@ -31,13 +31,11 @@ namespace Milky {
 	void Application::PushLayer(Layer* layer)
 	{
 		m_LayerStack.PushLayer(layer);
-		layer->OnAttach();
 	}
 
 	void Application::PushOverlay(Layer* overlay)
 	{
 		m_LayerStack.PushOverlay(overlay);
-		overlay->OnAttach();
 	}
 
 	void Application::Close()

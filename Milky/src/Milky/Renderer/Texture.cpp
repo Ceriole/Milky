@@ -1,5 +1,5 @@
 #include "mlpch.h"
-#include "Milky/Renderer/Texture.h"
+#include "Texture.h"
 
 #include "Milky/Renderer/Renderer.h"
 #include "Platform/OpenGL/OpenGLTexture.h"

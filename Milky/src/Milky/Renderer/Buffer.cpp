@@ -1,5 +1,5 @@
 #include "mlpch.h"
-#include "Milky/Renderer/Buffer.h"
+#include "Buffer.h"
 
 #include "Milky/Renderer/Renderer.h"
 

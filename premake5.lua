@@ -91,7 +91,6 @@ project "Milky"
 
 		defines
 		{
-			"ML_PLATFORM_WINDOWS"
 		}
 
 	filter "configurations:Debug"
@@ -142,7 +141,6 @@ project "Sandbox"
 
 		defines
 		{
-			"ML_PLATFORM_WINDOWS"
 		}
 
 	filter "configurations:Debug"

@@ -11,7 +11,7 @@ class ExampleLayer : public Milky::Layer
 {
 public:
 	ExampleLayer()
-		: Layer("Example"), m_CameraController(1280.0f / 720.0f)
+		: Layer("Example"), m_CameraController(1280.0f / 720.0f, true)
 	{
 		m_VertexArray.reset(Milky::VertexArray::Create());
 
@@ -151,9 +151,9 @@ public:
 		std::dynamic_pointer_cast<Milky::OpenGLShader>(m_FlatColorShader)->Bind();
 		std::dynamic_pointer_cast<Milky::OpenGLShader>(m_FlatColorShader)->UploadUniform("u_Color", m_SquareColor);
 		// Square grid
-		for (int y = 0; y < 20; y++)
+		for (int y = -25; y < 25; y++)
 		{
-			for (int x = 0; x < 20; x++)
+			for (int x = -25; x < 25; x++)
 			{
 				glm::vec3 pos(x * 0.11f, y * 0.11f, 0.0f);
 				glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;

@@ -1,12 +1,16 @@
 [submodule "Milky/vendor/spdlog"]
 	path = Milky/vendor/spdlog
 	url = https://github.com/gabime/spdlog
+	branch = v1.x
 [submodule "Milky/vendor/GLFW"]
 	path = Milky/vendor/GLFW
 	url = https://github.com/Ceriole/glfw
+	branch = master
 [submodule "Milky/vendor/imgui"]
 	path = Milky/vendor/imgui
 	url = https://github.com/Ceriole/imgui/
+	branch = docking
 [submodule "Milky/vendor/glm"]
 	path = Milky/vendor/glm
 	url = https://github.com/g-truc/glm
+	branch = master

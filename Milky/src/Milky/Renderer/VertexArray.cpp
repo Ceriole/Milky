@@ -1,5 +1,5 @@
 #include "mlpch.h"
-#include "Milky/Renderer/VertexArray.h"
+#include "VertexArray.h"
 
 #include "Milky/Renderer/Renderer.h"
 #include "Platform/OpenGL/OpenGLVertexArray.h"

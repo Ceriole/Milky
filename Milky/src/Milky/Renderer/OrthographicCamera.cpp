@@ -1,5 +1,5 @@
 #include "mlpch.h"
-#include "Milky/Renderer/OrthographicCamera.h"
+#include "OrthographicCamera.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 

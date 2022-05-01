@@ -1,5 +1,5 @@
 #include "mlpch.h"
-#include "Milky/Renderer/Shader.h"
+#include "Shader.h"
 
 #include "Milky/Renderer/Renderer.h"
 #include "Platform/OpenGL/OpenGLShader.h"
