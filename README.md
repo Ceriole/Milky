@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # # Milky [![License](https://img.shields.io/github/license/Ceriole/Milky.svg)](https://github.com/Ceriole/Milky/blob/main/LICENSE)
+=======
+# Milky [![License](https://img.shields.io/github/license/Ceriole/Milky.svg)](https://github.com/Ceriole/Milky/blob/main/LICENSE)
+>>>>>>> c326984 (Updated README.md and branding.)
 
 ![Milky](/Resources/Branding/Milky_Logo_500x.png?raw=true "Milky")
 
