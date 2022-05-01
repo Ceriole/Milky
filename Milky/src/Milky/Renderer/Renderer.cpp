@@ -1,11 +1,21 @@
 #include "mlpch.h"
-#include "Renderer.h"
+#include "Milky/Renderer/Renderer.h"
 
 #include "Platform/OpenGL/OpenGLShader.h"
 
 namespace Milky {
 
 	Renderer::SceneData* Renderer::m_SceneData = new Renderer::SceneData;
+
+	void Renderer::Init()
+	{
+		RenderCommand::Init();
+	}
+
+	void Renderer::SetViewportSize(uint32_t width, uint32_t height)
+	{
+		RenderCommand::SetViewport(0, 0, width, height);
+	}
 
 	void Renderer::BeginScene(OrthographicCamera& camera)
 	{

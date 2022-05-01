@@ -1,7 +1,7 @@
 #include "mlpch.h"
-#include "WindowsInput.h"
+#include "Platform/Windows/WindowsInput.h"
 
-#include "Milky/Application.h"
+#include "Milky/Core/Application.h"
 #include <GLFW/glfw3.h>
 
 namespace Milky {

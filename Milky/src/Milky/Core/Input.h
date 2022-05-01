@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Milky/Core.h"
+#include "Milky/Core/Core.h"
 
 namespace Milky {
 

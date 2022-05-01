@@ -1,6 +1,6 @@
 #pragma once
-#include "Milky/Core.h"
-#include "Milky/Application.h"
+#include "Milky/Core/Core.h"
+#include "Milky/Core/Application.h"
 
 #ifdef ML_PLATFORM_WINDOWS
 

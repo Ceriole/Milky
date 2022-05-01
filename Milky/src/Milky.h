@@ -5,15 +5,16 @@
 // ====================================
 
 // = APPLICATION ======================
-#include "Milky/Application.h"
-#include "Milky/Layer.h"
-#include "Milky/Log.h"
+#include "Milky/Core/Application.h"
+#include "Milky/Core/Layer.h"
+#include "Milky/Core//Log.h"
 
 #include "Milky/Core/Timestep.h"
 
-#include "Milky/Input.h"
-#include "Milky/KeyCodes.h"
-#include "Milky/MouseButtonCodes.h"
+#include "Milky/Core/Input.h"
+#include "Milky/Core/KeyCodes.h"
+#include "Milky/Core/MouseButtonCodes.h"
+#include "Milky/Renderer/OrthographicCameraController.h"
 
 #include "Milky/ImGui/ImGuiLayer.h"
 // ====================================
@@ -24,11 +25,12 @@
 
 #include "Milky/Renderer/Shader.h"
 #include "Milky/Renderer/Buffer.h"
+#include "Milky/Renderer/Texture.h"
 #include "Milky/Renderer/VertexArray.h"
 
-#include "Milky/Renderer/Camera.h"
+#include "Milky/Renderer/OrthographicCamera.h"
 // ====================================
 
 // = ENTRY POINT ======================
-#include "Milky/EntryPoint.h"
+#include "Milky/Core/EntryPoint.h"
 // ====================================

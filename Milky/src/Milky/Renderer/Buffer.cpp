@@ -1,7 +1,7 @@
 #include "mlpch.h"
-#include "Buffer.h"
+#include "Milky/Renderer/Buffer.h"
 
-#include "Renderer.h"
+#include "Milky/Renderer/Renderer.h"
 
 #include "Platform/OpenGL/OpenGLBuffer.h"
 

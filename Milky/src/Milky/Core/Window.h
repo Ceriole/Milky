@@ -2,7 +2,7 @@
 
 #include "mlpch.h"
 
-#include "Milky/Core.h"
+#include "Milky/Core/Core.h"
 #include "Milky/Events/Event.h"
 
 namespace Milky {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mlpch.h"
-#include "Milky/Core.h"
+#include "Milky/Core/Core.h"
 
 namespace Milky {
 

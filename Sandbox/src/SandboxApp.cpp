@@ -7,12 +7,11 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-
 class ExampleLayer : public Milky::Layer
 {
 public:
 	ExampleLayer()
-		: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f), m_CameraPosition(0.0f)
+		: Layer("Example"), m_CameraController(1280.0f / 720.0f)
 	{
 		m_VertexArray.reset(Milky::VertexArray::Create());
 
@@ -90,7 +89,7 @@ public:
 				}
 			)";
 
-		m_Shader.reset(Milky::Shader::Create(vertexSrc, fragmentSrc));
+		m_Shader = Milky::Shader::Create("VertexPosColor", vertexSrc, fragmentSrc);
 
 		std::string flatColorShaderVertexSrc = R"(
 				#version 330 core
@@ -124,67 +123,25 @@ public:
 				}
 			)";
 
-		m_FlatColorShader.reset(Milky::Shader::Create(flatColorShaderVertexSrc, flatColorShaderFragmentSrc));
+		m_FlatColorShader = Milky::Shader::Create("FlatColor", flatColorShaderVertexSrc, flatColorShaderFragmentSrc);
 
-		std::string textureShaderVertexSrc = R"(
-				#version 330 core
-				
-				layout(location = 0) in vec3 a_Position;
-				layout(location = 1) in vec2 a_TexCoord;
+		auto textureShader = m_ShaderLibrary.Load("assets/shaders/Texture.glsl");
 
-				uniform mat4 u_ViewProjection;
-				uniform mat4 u_Transform;
+		m_Texture = Milky::Texture2D::Create("assets/textures/grid.png");
+		m_CoolBugTexture = Milky::Texture2D::Create("assets/textures/coolbug.png");
 
-				out vec2 v_TexCoord;
-				
-				void main()
-				{
-					v_TexCoord = a_TexCoord;
-					gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);
-				}
-			)";
-
-		std::string textureShaderFragmentSrc = R"(
-				#version 330 core
-				
-				layout(location = 0) out vec4 o_Color;
-		
-				in vec2 v_TexCoord;
-
-				uniform vec3 u_Color;
-
-				void main()
-				{
-					o_Color = vec4(v_TexCoord, 0, 1);
-				}
-			)";
-
-		m_TextureShader.reset(Milky::Shader::Create(textureShaderVertexSrc, textureShaderFragmentSrc));
+		std::dynamic_pointer_cast<Milky::OpenGLShader>(textureShader)->Bind();
+		std::dynamic_pointer_cast<Milky::OpenGLShader>(m_FlatColorShader)->UploadUniform("u_Texture", 0);
 	}
 
 	void OnUpdate(Milky::Timestep ts) override
 	{
-		if (Milky::Input::IsKeyPressed(ML_KEY_LEFT))
-			m_CameraPosition.x -= m_CameraMoveSpeed * ts;
-		else if (Milky::Input::IsKeyPressed(ML_KEY_RIGHT))
-			m_CameraPosition.x += m_CameraMoveSpeed * ts;
-		if (Milky::Input::IsKeyPressed(ML_KEY_UP))
-			m_CameraPosition.y += m_CameraMoveSpeed * ts;
-		else if (Milky::Input::IsKeyPressed(ML_KEY_DOWN))
-			m_CameraPosition.y -= m_CameraMoveSpeed * ts;
-
-		if (Milky::Input::IsKeyPressed(ML_KEY_PAGE_UP))
-			m_CameraRotation += m_CameraRotationSpeed * ts;
-		else if (Milky::Input::IsKeyPressed(ML_KEY_PAGE_DOWN))
-			m_CameraRotation -= m_CameraRotationSpeed * ts;
+		m_CameraController.OnUpdate(ts);
 
 		Milky::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		Milky::RenderCommand::Clear();
 
-		m_Camera.SetPosition(m_CameraPosition);
-		m_Camera.SetRotation(m_CameraRotation);
-
-		Milky::Renderer::BeginScene(m_Camera); // Lights, cameras, action!
+		Milky::Renderer::BeginScene(m_CameraController.GetCamera()); // Lights, cameras, action!
 
 		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 
@@ -193,7 +150,7 @@ public:
 
 		std::dynamic_pointer_cast<Milky::OpenGLShader>(m_FlatColorShader)->Bind();
 		std::dynamic_pointer_cast<Milky::OpenGLShader>(m_FlatColorShader)->UploadUniform("u_Color", m_SquareColor);
-		// Square Grid
+		// Square grid
 		for (int y = 0; y < 20; y++)
 		{
 			for (int x = 0; x < 20; x++)
@@ -204,7 +161,14 @@ public:
 			}
 		}
 
-		Milky::Renderer::Submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+		auto textureShader = m_ShaderLibrary.Get("Texture");
+
+		// Textured squares
+		m_Texture->Bind();
+		Milky::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+
+		m_CoolBugTexture->Bind();
+		Milky::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 		
 		// Triangle
 		// Milky::Renderer::Submit(m_Shader, m_VertexArray);
@@ -214,6 +178,8 @@ public:
 
 	void OnEvent(Milky::Event& event) override
 	{
+		m_CameraController.OnEvent(event);
+		
 		Milky::EventDispatcher dispatcher = Milky::EventDispatcher(event);
 
 		dispatcher.Dispatch<Milky::KeyPressedEvent>([](Milky::KeyPressedEvent& e) {
@@ -229,25 +195,22 @@ public:
 	void OnImGuiRender() override
 	{
 		ImGui::Begin("Settings");
-
 		ImGui::ColorEdit3("Square Color", glm::value_ptr(m_SquareColor));
-
 		ImGui::End();
 	}
 
 private:
+	Milky::ShaderLibrary m_ShaderLibrary;
+
 	Milky::Ref<Milky::Shader> m_Shader;
 	Milky::Ref<Milky::VertexArray> m_VertexArray;
 
-	Milky::Ref<Milky::Shader> m_FlatColorShader, m_TextureShader;
+	Milky::Ref<Milky::Shader> m_FlatColorShader;
 	Milky::Ref<Milky::VertexArray> m_SquareVA;
 
-	Milky::OrthographicCamera m_Camera;
-	glm::vec3 m_CameraPosition;
-	float m_CameraMoveSpeed = 5.0f;
-	
-	float m_CameraRotation = 0.0f;
-	float m_CameraRotationSpeed = 180.0f;
+	Milky::Ref<Milky::Texture2D> m_Texture, m_CoolBugTexture;
+
+	Milky::OrthographicCameraController m_CameraController;
 
 	glm::vec3 m_SquareColor = {0.2f, 0.3f, 0.8f};
 };

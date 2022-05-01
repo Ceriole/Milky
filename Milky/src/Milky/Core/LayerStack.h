@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Milky/Core.h"
-#include "Layer.h"
+#include "Milky/Core/Core.h"
+#include "Milky/Core/Layer.h"
 
 #include <vector>
 

@@ -30,6 +30,7 @@ IncludeDir["GLFW"] = "Milky/vendor/GLFW/include"
 IncludeDir["Glad"] = "Milky/vendor/Glad/include"
 IncludeDir["ImGui"] = "Milky/vendor/imgui"
 IncludeDir["glm"] = "Milky/vendor/glm"
+IncludeDir["stb_image"] = "Milky/vendor/stb_image"
 
 group "Dependencies"
 	include "Milky/vendor/GLFW"
@@ -54,6 +55,8 @@ project "Milky"
 	{
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
+		"%{prj.name}/vendor/stb_image/**.h",
+		"%{prj.name}/vendor/stb_image/**.cpp",
 		"%{prj.name}/vendor/glm/glm/**.hpp",
 		"%{prj.name}/vendor/glm/glm/**.inl"
 	}
@@ -71,7 +74,8 @@ project "Milky"
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.stb_image}"
 	}
 
 	links

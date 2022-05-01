@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Core.h"
+#include "Milky/Core/Core.h"
 
-#include "Window.h"
-#include "Milky/LayerStack.h"
-#include "Events/Event.h"
+#include "Milky/Core/Window.h"
+#include "Milky/Core/LayerStack.h"
+#include "Milky/Events/Event.h"
 #include "Milky/Events/ApplicationEvent.h"
 
 #include "Milky/Core/Timestep.h"

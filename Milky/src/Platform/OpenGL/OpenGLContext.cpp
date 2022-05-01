@@ -33,10 +33,10 @@ namespace Milky {
 	std::string OpenGLContext::GetInfoString()
 	{
 		std::stringstream ss;
-		ss << "OpenGL Context:";
-		ss << "\tVendor: " << glGetString(GL_VENDOR);
-		ss << "\tRenderer: " << glGetString(GL_RENDERER);
-		ss << "\tVersion: " << glGetString(GL_VERSION);
+		ss << "OpenGL Context:" << std::endl;
+		ss << "\tVendor: " << glGetString(GL_VENDOR) << std::endl;
+		ss << "\tRenderer: " << glGetString(GL_RENDERER) << std::endl;
+		ss << "\tVersion: " << glGetString(GL_VERSION) << std::endl;
 		return ss.str();
 	}
 

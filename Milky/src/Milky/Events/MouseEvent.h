@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Event.h"
+#include "Milky/Events/Event.h"
 
 namespace Milky {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Milky/Window.h"
+#include "Milky/Core/Window.h"
 #include "Milky/Renderer/GraphicsContext.h"
 
 #include <GLFW/glfw3.h>

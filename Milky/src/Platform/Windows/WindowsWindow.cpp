@@ -1,5 +1,5 @@
 #include "mlpch.h"
-#include "WindowsWindow.h"
+#include "Platform/Windows/WindowsWindow.h"
 
 #include "Milky/Events/ApplicationEvent.h"
 #include "Milky/Events/MouseEvent.h"
@@ -151,6 +151,7 @@ namespace Milky {
 	
 	void WindowsWindow::OnUpdate()
 	{
+		glfwPollEvents();
 		m_Context->SwapBuffers();
 	}
 
