@@ -2,6 +2,7 @@
 #include "Renderer.h"
 
 #include "Platform/OpenGL/OpenGLShader.h"
+#include "Milky/Renderer/Renderer2D.h"
 
 namespace Milky {
 
@@ -10,6 +11,7 @@ namespace Milky {
 	void Renderer::Init()
 	{
 		RenderCommand::Init();
+		Renderer2D::Init();
 	}
 
 	void Renderer::SetViewportSize(uint32_t width, uint32_t height)
@@ -30,8 +32,8 @@ namespace Milky {
 	void Renderer::Submit(const Ref<Shader>& shader, const Ref<VertexArray>& vertexArray, const glm::mat4& transform)
 	{
 		shader->Bind();
-		std::dynamic_pointer_cast<OpenGLShader>(shader)->UploadUniform("u_ViewProjection", m_SceneData->ViewProjectionMatrix);
-		std::dynamic_pointer_cast<OpenGLShader>(shader)->UploadUniform("u_Transform", transform);
+		shader->Set("u_ViewProjection", m_SceneData->ViewProjectionMatrix);
+		shader->Set("u_Transform", transform);
 		vertexArray->Bind();
 		RenderCommand::DrawIndexed(vertexArray);
 	}

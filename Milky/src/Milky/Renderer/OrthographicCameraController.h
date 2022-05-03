@@ -8,10 +8,13 @@
 
 namespace Milky {
 
+#define CAMERA_MIN_ZOOM 0.1f
+#define CAMERA_MAX_ZOOM 20.0f
+
 	class OrthographicCameraController
 	{
 	public:
-		OrthographicCameraController(float aspectRatio, bool rotation = false);
+		OrthographicCameraController(float aspectRatio, bool rotation = false, bool mouse = true);
 
 		void OnUpdate(Timestep ts);
 		void OnEvent(Event& e);
@@ -20,19 +23,27 @@ namespace Milky {
 		const OrthographicCamera& GetCamera() const { return m_Camera; };
 
 		float GetZoomLevel() { return m_ZoomLevel; }
-		void SetZoomLevel(float level) { m_ZoomLevel = level; };
+		void SetZoomLevel(float level) { m_ZoomLevel = std::clamp(level, CAMERA_MIN_ZOOM, CAMERA_MAX_ZOOM); Recaluclate(); };
+
+		void SetPosition(const glm::vec3& position) { m_CameraPosition = position; };
+		void SetRotation(float rotation) { m_CameraRotation = rotation; };
 	private:
+		void Recaluclate();
+
 		bool OnMouseScrolled(MouseScrolledEvent& e);
+		bool OnMouseMoved(MouseMovedEvent& e);
+		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 		bool OnWindowResized(WindowResizeEvent& e);
 	private:
 		float m_AspectRatio;
 		float m_ZoomLevel = 1.0f;
 		OrthographicCamera m_Camera;
 
-		bool m_Rotation;
+		bool m_Rotation, m_Mouse;
 		glm::vec3 m_CameraPosition = { 0, 0, 0 };
 		float m_CameraRotation = 0.0f; // In degrees, in the anti-clockwise direction
-		float m_CameraTranslationSpeed = 5.0f, m_CameraRotationSpeed = 180.0f;
+		float m_CameraTranslationSpeed = 10.0f, m_CameraRotationSpeed = 180.0f;
+		glm::vec2 m_LastMousePos = { 0, 0 };
 	};
 
 }

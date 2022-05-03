@@ -30,13 +30,13 @@ namespace Milky {
 		return { (float) xpos, (float) ypos };
 	}
 
-	float WindowsInput::GetMouseXImpl(int button)
+	float WindowsInput::GetMouseXImpl()
 	{
 		auto[x, y] = GetMousePositionImpl();
 		return x;
 	}
 
-	float WindowsInput::GetMouseYImpl(int button)
+	float WindowsInput::GetMouseYImpl()
 	{
 		auto[x, y] = GetMousePositionImpl();
 		return y;

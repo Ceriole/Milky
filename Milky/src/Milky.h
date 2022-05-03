@@ -21,6 +21,7 @@
 
 // = RENDERER =========================
 #include "Milky/Renderer/Renderer.h"
+#include "Milky/Renderer/Renderer2D.h"
 #include "Milky/Renderer/RenderCommand.h"
 
 #include "Milky/Renderer/Shader.h"

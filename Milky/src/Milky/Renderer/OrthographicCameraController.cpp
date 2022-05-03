@@ -1,19 +1,40 @@
 #include "mlpch.h"
 #include "OrthographicCameraController.h"
 
+#include "Milky/Core/Application.h"
 #include "Milky/Core/Input.h"
 #include "Milky/Core/KeyCodes.h"
+#include "Milky/Core/MouseButtonCodes.h"
+
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace Milky {
 
-	OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool rotation)
-		: m_AspectRatio(aspectRatio), m_Camera(-m_AspectRatio * m_ZoomLevel, m_AspectRatio* m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel), m_Rotation(rotation)
+	OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool rotation, bool mouse)
+		: m_AspectRatio(aspectRatio), m_Camera(-m_AspectRatio * m_ZoomLevel, m_AspectRatio* m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel), m_Rotation(rotation), m_Mouse(mouse)
 	{
-		
 	}
 
 	void OrthographicCameraController::OnUpdate(Timestep ts)
 	{
+		if (m_Mouse)
+		{
+			auto [x, y] = Input::GetMousePosition();
+
+			if (m_LastMousePos.x || m_LastMousePos.y)
+			{
+				float dx = x - m_LastMousePos.x;
+				float dy = y - m_LastMousePos.y;
+
+				m_CameraPosition.x -= ((dx * 2.0f) / Application::Get().GetWindow().GetWidth()) * m_ZoomLevel * m_AspectRatio;
+				m_CameraPosition.y += ((dy * 2.0f) / Application::Get().GetWindow().GetHeight()) * m_ZoomLevel;
+			}
+
+			if (Input::IsMouseButtonPressed(ML_MOUSE_BUTTON_1))
+				m_LastMousePos = { x, y };
+			else
+				m_LastMousePos = { 0, 0 };
+		}
 		if (Input::IsKeyPressed(ML_KEY_A))
 		{
 			m_CameraPosition.x -= cos(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * ts;
@@ -58,22 +79,50 @@ namespace Milky {
 	void OrthographicCameraController::OnEvent(Event& e)
 	{
 		EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<MouseScrolledEvent>(ML_BIND_EVENT_FN(OrthographicCameraController::OnMouseScrolled));
+		if(m_Mouse)
+			dispatcher.Dispatch<MouseScrolledEvent>(ML_BIND_EVENT_FN(OrthographicCameraController::OnMouseScrolled));
 		dispatcher.Dispatch<WindowResizeEvent>(ML_BIND_EVENT_FN(OrthographicCameraController::OnWindowResized));
+	}
+
+	void OrthographicCameraController::Recaluclate()
+	{
+		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
 	}
 
 	bool OrthographicCameraController::OnMouseScrolled(MouseScrolledEvent& e)
 	{
-		m_ZoomLevel -= e.GetYOffset() * 0.25f;
-		m_ZoomLevel = std::clamp(m_ZoomLevel, 0.1f, 20.0f);
-		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+		const float scrWidth = (float) Application::Get().GetWindow().GetWidth();
+		const float scrHeight = (float) Application::Get().GetWindow().GetHeight();
+		float mx = Input::GetMouseX() / scrWidth;
+		float my = Input::GetMouseY() / scrHeight;
+		mx = (mx *  2.0f) - 1.0f;
+		my = (my * -2.0f) + 1.0f;
+
+		glm::vec4 preZoom = glm::vec4(mx, my, 0, 0) * glm::inverse(m_Camera.GetViewProjectionMatrix());
+
+		SetZoomLevel(m_ZoomLevel * std::pow(1.2f, -e.GetYOffset() / 2.0f));
+
+		glm::vec4 postZoom = glm::vec4(mx, my, 0, 0) * glm::inverse(m_Camera.GetViewProjectionMatrix());
+
+		m_CameraPosition += glm::vec3(preZoom) - glm::vec3(postZoom);
+
+		return false;
+	}
+
+	bool OrthographicCameraController::OnMouseMoved(MouseMovedEvent& e)
+	{
+		return false;
+	}
+
+	bool OrthographicCameraController::OnMouseButtonPressed(MouseButtonPressedEvent& e)
+	{
 		return false;
 	}
 
 	bool OrthographicCameraController::OnWindowResized(WindowResizeEvent& e)
 	{
 		m_AspectRatio = (float) e.GetWidth() / (float) e.GetHeight();
-		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+		Recaluclate();
 		return false;
 	}
 

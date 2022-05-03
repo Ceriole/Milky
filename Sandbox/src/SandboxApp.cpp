@@ -130,10 +130,11 @@ public:
 
 		auto textureShader = m_ShaderLibrary.Load("assets/shaders/Texture.glsl");
 
-		m_Texture = Milky::Texture2D::Create("assets/textures/grid.png");
+		m_Texture = Milky::Texture2D::Create("assets/textures/checkerboard.png");
 
-		std::dynamic_pointer_cast<Milky::OpenGLShader>(textureShader)->Bind();
-		std::dynamic_pointer_cast<Milky::OpenGLShader>(m_FlatColorShader)->UploadUniform("u_Texture", 0);
+		textureShader->Bind();
+		textureShader->Set("u_Texture", 0);
+		textureShader->Set("u_Color", {1,1,1,1});
 	}
 
 	void OnUpdate(Milky::Timestep ts) override
@@ -150,8 +151,8 @@ public:
 		glm::vec3 redColor(0.8f, 0.2f, 0.3f);
 		glm::vec3 blueColor(0.2f, 0.3f, 0.8f);
 
-		std::dynamic_pointer_cast<Milky::OpenGLShader>(m_FlatColorShader)->Bind();
-		std::dynamic_pointer_cast<Milky::OpenGLShader>(m_FlatColorShader)->UploadUniform("u_Color", m_SquareColor);
+		m_FlatColorShader->Bind();
+		m_FlatColorShader->Set("u_Color", m_SquareColor);
 		// Square grid
 		for (int y = 0; y < 20; y++)
 		{

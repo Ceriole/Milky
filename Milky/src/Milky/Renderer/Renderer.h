@@ -24,6 +24,7 @@ namespace Milky {
 		{
 			glm::mat4 ViewProjectionMatrix;
 		};
+
 		static Scope<SceneData> m_SceneData;
 	};
 

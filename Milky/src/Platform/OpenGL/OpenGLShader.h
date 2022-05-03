@@ -1,9 +1,6 @@
 #pragma once
 
 #include "Milky/Renderer/Shader.h"
-#include <glm/glm.hpp>
-
-#include <unordered_map>
 
 typedef unsigned int GLenum;
 
@@ -24,6 +21,14 @@ namespace Milky {
 		virtual void Unbind() const override;
 
 		virtual const std::string& GetName() const override { return m_Name; };
+
+		void Set(const std::string& name, int value) override;
+		void Set(const std::string& name, float value) override;
+		void Set(const std::string& name, const glm::vec2& values) override;
+		void Set(const std::string& name, const glm::vec3& values) override;
+		void Set(const std::string& name, const glm::vec4& values) override;
+		void Set(const std::string& name, const glm::mat3& matrix) override;
+		void Set(const std::string& name, const glm::mat4& matrix) override;
 
 		void UploadUniform(const std::string& name, int value);
 		void UploadUniform(const std::string& name, float value);

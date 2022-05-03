@@ -15,5 +15,5 @@ int main(int argc, char** argv)
 }
 
 #else
-#error Milky only supports Windows!
+	#error Milky only supports Windows!
 #endif

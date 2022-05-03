@@ -184,6 +184,41 @@ namespace Milky {
 		glUseProgram(0);
 	}
 
+	void OpenGLShader::Set(const std::string& name, int value)
+	{
+		UploadUniform(name, value);
+	}
+
+	void OpenGLShader::Set(const std::string& name, float value)
+	{
+		UploadUniform(name, value);
+	}
+
+	void OpenGLShader::Set(const std::string& name, const glm::vec2& values)
+	{
+		UploadUniform(name, values);
+	}
+
+	void OpenGLShader::Set(const std::string& name, const glm::vec3& values)
+	{
+		UploadUniform(name, values);
+	}
+
+	void OpenGLShader::Set(const std::string& name, const glm::vec4& values)
+	{
+		UploadUniform(name, values);
+	}
+
+	void OpenGLShader::Set(const std::string& name, const glm::mat3& matrix)
+	{
+		UploadUniform(name, matrix);
+	}
+
+	void OpenGLShader::Set(const std::string& name, const glm::mat4& matrix)
+	{
+		UploadUniform(name, matrix);
+	}
+
 	int OpenGLShader::GetUniformLocation(const std::string& name) const
 	{
 		if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
