@@ -3,8 +3,6 @@
 
 #include <stb_image.h>
 
-#include <glad/glad.h>
-
 #include <glm/gtc/type_ptr.hpp>
 
 namespace Milky {
@@ -35,6 +33,24 @@ namespace Milky {
 		}
 	}
 
+	OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height, TextureFlags flags)
+		: m_Width(width), m_Height(height)
+	{
+		m_InternalFormat = GL_RGBA8;
+		m_DataFormat = GL_RGBA;
+
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
+		glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
+
+		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, FilterTypeToGL(flags.minFilter));
+		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, FilterTypeToGL(flags.magFilter));
+
+		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, WrapTypeToGL(flags.wrapping));
+		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, WrapTypeToGL(flags.wrapping));
+
+		glTextureParameterfv(m_RendererID, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(flags.borderColor));
+	}
+
 	OpenGLTexture2D::OpenGLTexture2D(const std::string& path, TextureFlags flags)
 		: m_Path(path)
 	{
@@ -59,6 +75,9 @@ namespace Milky {
 		}
 		ML_CORE_ASSERT(internalFormat & dataFormat, "Image format not supported!");
 
+		m_InternalFormat = internalFormat;
+		m_DataFormat = dataFormat;
+
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
 		glTextureStorage2D(m_RendererID, 1, internalFormat, m_Width, m_Height);
 
@@ -68,7 +87,7 @@ namespace Milky {
 		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, WrapTypeToGL(flags.wrapping));
 		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, WrapTypeToGL(flags.wrapping));
 
-		glad_glTextureParameterfv(m_RendererID, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(flags.borderColor));
+		glTextureParameterfv(m_RendererID, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(flags.borderColor));
 
 		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, dataFormat, GL_UNSIGNED_BYTE, data);
 
@@ -78,6 +97,15 @@ namespace Milky {
 	OpenGLTexture2D::~OpenGLTexture2D()
 	{
 		glDeleteTextures(1, &m_RendererID);
+	}
+
+	void OpenGLTexture2D::SetData(void* data, uint32_t size)
+	{
+#ifdef ML_ENABLE_ASSERTS
+		uint32_t bpp = m_DataFormat == GL_RGBA ? 4 : 3;
+		ML_CORE_ASSERT(size == m_Width * m_Height * bpp, "Data must be size of the image!");
+#endif
+		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data);
 	}
 
 	void OpenGLTexture2D::Bind(uint32_t slot) const
