@@ -5,9 +5,37 @@
 
 #include <glad/glad.h>
 
+#include <glm/gtc/type_ptr.hpp>
+
 namespace Milky {
 
-	OpenGLTexture2D::OpenGLTexture2D(const std::string& path)
+	GLint FilterTypeToGL(Texture::FilterType type)
+	{
+		switch (type)
+		{
+		default:
+		case Texture::FilterType::NEAREST: return GL_NEAREST;
+		case Texture::FilterType::LINEAR: return GL_LINEAR;
+		case Texture::FilterType::NEAREST_MIPMAP_NEAREST: return GL_NEAREST_MIPMAP_NEAREST;
+		case Texture::FilterType::NEAREST_MIPMAP_LINEAR: return GL_NEAREST_MIPMAP_LINEAR;
+		case Texture::FilterType::LINEAR_MIPMAP_NEAREST: return GL_LINEAR_MIPMAP_NEAREST;
+		case Texture::FilterType::LINEAR_MIPMAP_LINEAR: return GL_LINEAR_MIPMAP_LINEAR;
+		}
+	}
+
+	GLint WrapTypeToGL(Texture::WrapType type)
+	{
+		switch (type)
+		{
+		default:
+		case Texture::WrapType::REPEAT: return GL_REPEAT;
+		case Texture::WrapType::MIRRORED_REPEAT: return GL_MIRRORED_REPEAT;
+		case Texture::WrapType::CLAMP_TO_EDGE: return GL_CLAMP_TO_EDGE;
+		case Texture::WrapType::CLAMP_TO_BORDER: return GL_CLAMP_TO_BORDER;
+		}
+	}
+
+	OpenGLTexture2D::OpenGLTexture2D(const std::string& path, TextureFlags flags)
 		: m_Path(path)
 	{
 		int width, height, channels;
@@ -34,8 +62,13 @@ namespace Milky {
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
 		glTextureStorage2D(m_RendererID, 1, internalFormat, m_Width, m_Height);
 
-		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, FilterTypeToGL(flags.minFilter));
+		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, FilterTypeToGL(flags.magFilter));
+
+		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, WrapTypeToGL(flags.wrapping));
+		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, WrapTypeToGL(flags.wrapping));
+
+		glad_glTextureParameterfv(m_RendererID, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(flags.borderColor));
 
 		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, dataFormat, GL_UNSIGNED_BYTE, data);
 

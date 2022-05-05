@@ -1,12 +1,36 @@
 #pragma once
 
 #include "Milky/Core/Core.h"
+#include <glm/glm.hpp>
 #include <string>
 
 namespace Milky {
 
 	class Texture
 	{
+	public:
+		enum class FilterType
+		{
+			NEAREST = 0,
+			LINEAR,
+			NEAREST_MIPMAP_NEAREST,
+			NEAREST_MIPMAP_LINEAR,
+			LINEAR_MIPMAP_NEAREST,
+			LINEAR_MIPMAP_LINEAR
+		};
+		enum class WrapType
+		{
+			REPEAT = 0,
+			MIRRORED_REPEAT,
+			CLAMP_TO_EDGE,
+			MIRROR_CLAMP_TO_EDGE,
+			CLAMP_TO_BORDER
+		};
+		struct TextureFlags {
+			FilterType minFilter = FilterType::NEAREST, magFilter = FilterType::NEAREST;
+			WrapType wrapping = WrapType::REPEAT;
+			glm::vec4 borderColor = { 0,0,0,0 };
+		};
 	public:
 		virtual ~Texture() = default;
 
@@ -19,7 +43,7 @@ namespace Milky {
 	class Texture2D : public Texture
 	{
 	public:
-		static Ref<Texture2D> Create(const std::string& path);
+		static Ref<Texture2D> Create(const std::string& path, TextureFlags flags = TextureFlags());
 	};
 
 }
