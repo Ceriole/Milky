@@ -10,6 +10,8 @@ namespace Milky {
 
 	void Renderer::Init()
 	{
+		ML_PROFILE_FUNCTION();
+
 		RenderCommand::Init();
 		Renderer2D::Init();
 	}

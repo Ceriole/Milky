@@ -27,6 +27,8 @@ namespace Milky {
 	
 	OpenGLShader::OpenGLShader(const std::string& filepath)
 	{
+		ML_PROFILE_FUNCTION();
+
 		std::string shaderSrc = ReadFile(filepath);
 		std::unordered_map<GLenum, std::string> sources = PreProcess(shaderSrc);
 		Compile(sources);
@@ -42,6 +44,8 @@ namespace Milky {
 	OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc)
 		: m_Name(name)
 	{
+		ML_PROFILE_FUNCTION();
+
 		std::unordered_map<GLenum, std::string> sources;
 		sources[GL_VERTEX_SHADER] = vertexSrc;
 		sources[GL_FRAGMENT_SHADER] = fragmentSrc;
@@ -50,11 +54,15 @@ namespace Milky {
 
 	OpenGLShader::~OpenGLShader()
 	{
-		
+		ML_PROFILE_FUNCTION();
+
+		glDeleteProgram(m_RendererID);
 	}
 
 	std::string OpenGLShader::ReadFile(const std::string& filepath)
 	{
+		ML_PROFILE_FUNCTION();
+
 		std::string result;
 		ML_CORE_TRACE("Loading shader source file: '{0}'", filepath);
 		std::ifstream in(filepath, std::ios::in | std::ios::binary);
@@ -75,6 +83,8 @@ namespace Milky {
 
 	std::unordered_map<GLenum, std::string> OpenGLShader::PreProcess(const std::string& source)
 	{
+		ML_PROFILE_FUNCTION();
+
 		std::unordered_map<GLenum, std::string> shaderSources;
 
 		std::string toSearch = source;
@@ -95,6 +105,8 @@ namespace Milky {
 
 	void OpenGLShader::Compile(std::unordered_map<GLenum, std::string>& shaderSources)
 	{
+		ML_PROFILE_FUNCTION();
+
 		GLuint program = glCreateProgram();
 		ML_CORE_ASSERT(shaderSources.size() <= 2, "Shader program asset can only contain a maximum of 2 shaders!");
 		std::array<GLenum, 2> glShaderIDs;
@@ -176,46 +188,64 @@ namespace Milky {
 
 	void OpenGLShader::Bind() const
 	{
+		ML_PROFILE_FUNCTION();
+
 		glUseProgram(m_RendererID);
 	}
 
 	void OpenGLShader::Unbind() const
 	{
+		ML_PROFILE_FUNCTION();
+
 		glUseProgram(0);
 	}
 
 	void OpenGLShader::Set(const std::string& name, int value)
 	{
+		ML_PROFILE_FUNCTION();
+
 		UploadUniform(name, value);
 	}
 
 	void OpenGLShader::Set(const std::string& name, float value)
 	{
+		ML_PROFILE_FUNCTION();
+
 		UploadUniform(name, value);
 	}
 
 	void OpenGLShader::Set(const std::string& name, const glm::vec2& values)
 	{
+		ML_PROFILE_FUNCTION();
+
 		UploadUniform(name, values);
 	}
 
 	void OpenGLShader::Set(const std::string& name, const glm::vec3& values)
 	{
+		ML_PROFILE_FUNCTION();
+
 		UploadUniform(name, values);
 	}
 
 	void OpenGLShader::Set(const std::string& name, const glm::vec4& values)
 	{
+		ML_PROFILE_FUNCTION();
+
 		UploadUniform(name, values);
 	}
 
 	void OpenGLShader::Set(const std::string& name, const glm::mat3& matrix)
 	{
+		ML_PROFILE_FUNCTION();
+
 		UploadUniform(name, matrix);
 	}
 
 	void OpenGLShader::Set(const std::string& name, const glm::mat4& matrix)
 	{
+		ML_PROFILE_FUNCTION();
+
 		UploadUniform(name, matrix);
 	}
 

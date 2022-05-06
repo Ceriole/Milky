@@ -17,6 +17,8 @@ namespace Milky {
 
 	void OrthographicCameraController::OnUpdate(Timestep ts)
 	{
+		ML_PROFILE_FUNCTION();
+
 		if (m_Mouse)
 		{
 			auto [x, y] = Input::GetMousePosition();
@@ -78,6 +80,8 @@ namespace Milky {
 
 	void OrthographicCameraController::OnEvent(Event& e)
 	{
+		ML_PROFILE_FUNCTION();
+
 		EventDispatcher dispatcher(e);
 		if(m_Mouse)
 			dispatcher.Dispatch<MouseScrolledEvent>(ML_BIND_EVENT_FN(OrthographicCameraController::OnMouseScrolled));
@@ -91,6 +95,8 @@ namespace Milky {
 
 	bool OrthographicCameraController::OnMouseScrolled(MouseScrolledEvent& e)
 	{
+		ML_PROFILE_FUNCTION();
+
 		const float scrWidth = (float) Application::Get().GetWindow().GetWidth();
 		const float scrHeight = (float) Application::Get().GetWindow().GetHeight();
 		float mx = Input::GetMouseX() / scrWidth;
@@ -121,6 +127,8 @@ namespace Milky {
 
 	bool OrthographicCameraController::OnWindowResized(WindowResizeEvent& e)
 	{
+		ML_PROFILE_FUNCTION();
+
 		m_AspectRatio = (float) e.GetWidth() / (float) e.GetHeight();
 		Recaluclate();
 		return false;

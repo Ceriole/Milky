@@ -12,34 +12,48 @@ Sandbox2D::Sandbox2D()
 
 void Sandbox2D::OnAttach()
 {
+	ML_PROFILE_FUNCTION();
+
 	m_CheckerTexture = Milky::Texture2D::Create("assets/textures/checkerboard.png");
 }
 
 void Sandbox2D::OnDetach()
 {
+	ML_PROFILE_FUNCTION();
+
 }
 
 void Sandbox2D::OnUpdate(Milky::Timestep ts)
 {
+	ML_PROFILE_FUNCTION();
+
 	m_CameraController.OnUpdate(ts);
 
-	Milky::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
-	Milky::RenderCommand::Clear();
+	{
+		ML_PROFILE_SCOPE("Render Prep");
+		Milky::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
+		Milky::RenderCommand::Clear();
+	}
 
 	Milky::Renderer2D::BeginScene(m_CameraController.GetCamera()); // Lights, cameras, action!
 	
-	Milky::Renderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, m_SquareColor);
-	glm::vec4 inverseColor = {1 - m_SquareColor.r, 1 - m_SquareColor.g, 1 - m_SquareColor.b, m_SquareColor.a};
-	Milky::Renderer2D::DrawQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, inverseColor, 45.0f);
+	{
+		ML_PROFILE_SCOPE("Render Draw");
+		Milky::Renderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, m_SquareColor);
+		glm::vec4 inverseColor = { 1 - m_SquareColor.r, 1 - m_SquareColor.g, 1 - m_SquareColor.b, m_SquareColor.a };
+		Milky::Renderer2D::DrawRotatedQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, glm::radians(45.0f), inverseColor);
 
-	Milky::Renderer2D::DrawQuad({ 0.2f, 0.5f }, { 0.5f, 0.75f }, m_CheckerTexture, m_SquareColor);
+		Milky::Renderer2D::DrawRotatedQuad({ 0.0f, 0.0f, -0.1f }, { 10.0f, 10.0f }, glm::radians(45.0f), m_CheckerTexture, glm::vec4(1.0f), 10.0f);
 
-	Milky::Renderer2D::DrawQuad({ 0.0f, 0.0f }, { 0.05f, 0.05f }, {1,0,0,1}, 45.0f);
-	Milky::Renderer2D::EndScene(); // And cut!
+		Milky::Renderer2D::DrawQuad({ 0.0f, 0.0f }, { 0.05f, 0.05f }, { 1,0,0,1 });
+		Milky::Renderer2D::EndScene(); // And cut!
+	}
 }
 
 void Sandbox2D::OnImGuiRender()
 {
+	ML_PROFILE_FUNCTION();
+
 	ImGui::Begin("Settings");
 	ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SquareColor));
 	ImGui::TextDisabled("Use [LMB] + mouse OR\n[W],[A],[S],[D] to pan the camera.");

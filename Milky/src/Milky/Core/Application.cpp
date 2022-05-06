@@ -11,6 +11,8 @@ namespace Milky {
 
 	Application::Application()
 	{
+		ML_PROFILE_FUNCTION();
+
 		ML_CORE_ASSERT(!s_Instance, "Only one instance of Application is allowed!");
 		s_Instance = this;
 
@@ -30,12 +32,18 @@ namespace Milky {
 
 	void Application::PushLayer(Layer* layer)
 	{
+		ML_PROFILE_FUNCTION();
+
 		m_LayerStack.PushLayer(layer);
+		layer->OnAttach();
 	}
 
 	void Application::PushOverlay(Layer* overlay)
 	{
+		ML_PROFILE_FUNCTION();
+
 		m_LayerStack.PushOverlay(overlay);
+		overlay->OnAttach();
 	}
 
 	void Application::Close()
@@ -45,6 +53,8 @@ namespace Milky {
 
 	void Application::OnEvent(Event& e)
 	{
+		ML_PROFILE_FUNCTION();
+
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<WindowCloseEvent>(ML_BIND_EVENT_FN(Application::OnWindowClose));
 		dispatcher.Dispatch<WindowResizeEvent>(ML_BIND_EVENT_FN(Application::OnWindowResize));
@@ -60,23 +70,32 @@ namespace Milky {
 
 	void Application::Run()
 	{
+		ML_PROFILE_FUNCTION();
+
 		while (m_Running)
 		{
+			ML_PROFILE_SCOPE("Run Loop");
+
 			float time = (float) glfwGetTime(); // TODO Platform::GetTime
 			Timestep timestep = time - m_LastFrameTime;
 			m_LastFrameTime = time;
 
 			if (!m_Minimized)
 			{
-				for (Layer* layer : m_LayerStack)
-					layer->OnUpdate(timestep);
-
+				{
+					ML_PROFILE_SCOPE("LayerStack Layer::OnUpdate");
+					for (Layer* layer : m_LayerStack)
+						layer->OnUpdate(timestep);
+				}
 			}
 
-			m_ImGuiLayer->Begin();
-			for (Layer* layer : m_LayerStack)
-				layer->OnImGuiRender();
 
+			m_ImGuiLayer->Begin();
+			{
+				ML_PROFILE_SCOPE("LayerStack Layer::OnImGuiRender");
+				for (Layer* layer : m_LayerStack)
+					layer->OnImGuiRender();
+			}
 			m_ImGuiLayer->End();
 
 			m_Window->OnUpdate();
@@ -91,6 +110,8 @@ namespace Milky {
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
+		ML_PROFILE_FUNCTION();
+
 		if (e.GetWidth() == 0 || e.GetHeight() == 0)
 		{
 			m_Minimized = true;

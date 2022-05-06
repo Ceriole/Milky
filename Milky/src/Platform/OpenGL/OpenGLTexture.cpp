@@ -36,6 +36,8 @@ namespace Milky {
 	OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height, TextureFlags flags)
 		: m_Width(width), m_Height(height)
 	{
+		ML_PROFILE_FUNCTION();
+
 		m_InternalFormat = GL_RGBA8;
 		m_DataFormat = GL_RGBA;
 
@@ -54,10 +56,16 @@ namespace Milky {
 	OpenGLTexture2D::OpenGLTexture2D(const std::string& path, TextureFlags flags)
 		: m_Path(path)
 	{
+		ML_PROFILE_FUNCTION();
+
 		int width, height, channels;
 		ML_CORE_TRACE("Loading Texture: '{0}'", path);
 		stbi_set_flip_vertically_on_load(1);
-		stbi_uc* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
+		stbi_uc* data = nullptr;
+		{
+			ML_PROFILE_SCOPE("stbi_load - OpenGLTexture2D::OpenGLTexture2D(const std::string& path, TextureFlags flags)");
+			data = stbi_load(path.c_str(), &width, &height, &channels, 0);
+		}
 		ML_CORE_ASSERT(data, "Failed to load image!");
 		m_Width = width;
 		m_Height = height;
@@ -96,11 +104,15 @@ namespace Milky {
 
 	OpenGLTexture2D::~OpenGLTexture2D()
 	{
+		ML_PROFILE_FUNCTION();
+
 		glDeleteTextures(1, &m_RendererID);
 	}
 
 	void OpenGLTexture2D::SetData(void* data, uint32_t size)
 	{
+		ML_PROFILE_FUNCTION();
+
 #ifdef ML_ENABLE_ASSERTS
 		uint32_t bpp = m_DataFormat == GL_RGBA ? 4 : 3;
 		ML_CORE_ASSERT(size == m_Width * m_Height * bpp, "Data must be size of the image!");
@@ -110,6 +122,8 @@ namespace Milky {
 
 	void OpenGLTexture2D::Bind(uint32_t slot) const
 	{
+		ML_PROFILE_FUNCTION();
+
 		glBindTextureUnit(slot, m_RendererID);
 	}
 }

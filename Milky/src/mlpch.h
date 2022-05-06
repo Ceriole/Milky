@@ -15,6 +15,8 @@
 
 #include "Milky/Core/Log.h"
 
+#include "Milky/Debug/Instrumentor.h"
+
 #ifdef ML_PLATFORM_WINDOWS
 	#include <Windows.h>
 #endif
