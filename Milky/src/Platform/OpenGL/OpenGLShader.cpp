@@ -207,11 +207,25 @@ namespace Milky {
 		UploadUniform(name, value);
 	}
 
+	void OpenGLShader::Set(const std::string& name, int* values, uint32_t count)
+	{
+		ML_PROFILE_FUNCTION();
+
+		UploadUniform(name, values, count);
+	}
+
 	void OpenGLShader::Set(const std::string& name, float value)
 	{
 		ML_PROFILE_FUNCTION();
 
 		UploadUniform(name, value);
+	}
+
+	void OpenGLShader::Set(const std::string& name, float* values, uint32_t count)
+	{
+		ML_PROFILE_FUNCTION();
+
+		UploadUniform(name, values, count);
 	}
 
 	void OpenGLShader::Set(const std::string& name, const glm::vec2& values)
@@ -264,10 +278,22 @@ namespace Milky {
 		glUniform1i(location, value);
 	}
 
+	void OpenGLShader::UploadUniform(const std::string& name, int* values, uint32_t count)
+	{
+		GLint location = GetUniformLocation(name.c_str());
+		glUniform1iv(location, count, values);
+	}
+
 	void OpenGLShader::UploadUniform(const std::string& name, float value)
 	{
 		GLint location = GetUniformLocation(name.c_str());
 		glUniform1f(location, value);
+	}
+
+	void OpenGLShader::UploadUniform(const std::string& name, float* values, uint32_t count)
+	{
+		GLint location = GetUniformLocation(name.c_str());
+		glUniform1fv(location, count, values);
 	}
 
 	void OpenGLShader::UploadUniform(const std::string& name, const glm::vec2& values)

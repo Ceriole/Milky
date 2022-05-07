@@ -16,7 +16,9 @@ namespace Milky {
 		virtual void Unbind() const = 0;
 
 		virtual void Set(const std::string& name, int value) = 0;
+		virtual void Set(const std::string & name, int* values, uint32_t count) = 0;
 		virtual void Set(const std::string& name, float value) = 0;
+		virtual void Set(const std::string& name, float* values, uint32_t count) = 0;
 		virtual void Set(const std::string& name, const glm::vec2& values) = 0;
 		virtual void Set(const std::string& name, const glm::vec3& values) = 0;
 		virtual void Set(const std::string& name, const glm::vec4& values) = 0;

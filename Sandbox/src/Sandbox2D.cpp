@@ -41,11 +41,18 @@ void Sandbox2D::OnUpdate(Milky::Timestep ts)
 		ML_PROFILE_SCOPE("Render Draw");
 		Milky::Renderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, m_SquareColor);
 		glm::vec4 inverseColor = { 1 - m_SquareColor.r, 1 - m_SquareColor.g, 1 - m_SquareColor.b, m_SquareColor.a };
-		Milky::Renderer2D::DrawRotatedQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, glm::radians(45.0f), inverseColor);
+		Milky::Renderer2D::DrawQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, inverseColor);
+		Milky::Renderer2D::DrawQuad({ 0.0f, 0.0f, -0.1f }, { 10.0f, 10.0f }, m_CheckerTexture, glm::vec4(1.0f), 10.0f);
 
-		Milky::Renderer2D::DrawRotatedQuad({ 0.0f, 0.0f, -0.1f }, { 10.0f, 10.0f }, glm::radians(45.0f), m_CheckerTexture, glm::vec4(1.0f), 10.0f);
+		Milky::Renderer2D::DrawRotatedQuad({ 0.0f, 0.0f }, { 0.05f, 0.05f }, 45.0f, {1,0,0,1});
 
-		Milky::Renderer2D::DrawQuad({ 0.0f, 0.0f }, { 0.05f, 0.05f }, { 1,0,0,1 });
+		/*for (int x = 0; x < 30; x++)
+		{
+			for (int y = 0; y < 30; y++)
+			{
+				Milky::Renderer2D::DrawQuad({ 0.5f + x * 0.1f , 0.5f + y * 0.1f }, { 0.08f, 0.08f }, (x % 2 || y % 2) ? m_SquareColor : inverseColor);
+			}
+		}*/
 		Milky::Renderer2D::EndScene(); // And cut!
 	}
 }
