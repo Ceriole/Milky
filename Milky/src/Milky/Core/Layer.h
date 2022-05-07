@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Milky/Core/Core.h"
+#include "Milky/Core/Base.h"
 #include "Milky/Core/Timestep.h"
 #include "Milky/Events/Event.h"
 

@@ -37,7 +37,7 @@ static const char* s_MapTiles =
 ;
 
 Sandbox2D::Sandbox2D()
-	: Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f, false), m_ParticleSystem(10000)
+	: Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f), m_ParticleSystem(10000)
 {
 }
 
@@ -53,7 +53,7 @@ void Sandbox2D::OnAttach()
 	m_TextureTree = Milky::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 5, 1 }, { 128, 128 }, { 1, 2 });
 
 	m_MapWidth = s_MapWidth;
-	m_MapHeight = strlen(s_MapTiles) / s_MapWidth;
+	m_MapHeight = (uint32_t) strlen(s_MapTiles) / s_MapWidth;
 
 	m_TextureMap['_'] = Milky::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 11, 11 }, { 128, 128 });	// Water
 	m_TextureMap['.'] = Milky::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 6, 11 }, { 128, 128 });	// Dirt

@@ -7,7 +7,7 @@
 // = APPLICATION ======================
 #include "Milky/Core/Application.h"
 #include "Milky/Core/Layer.h"
-#include "Milky/Core//Log.h"
+#include "Milky/Core/Log.h"
 
 #include "Milky/Core/Timestep.h"
 

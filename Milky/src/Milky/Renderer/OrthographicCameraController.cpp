@@ -32,7 +32,7 @@ namespace Milky {
 				m_CameraPosition.y += ((dy * 2.0f) / Application::Get().GetWindow().GetHeight()) * m_ZoomLevel;
 			}
 
-			if (Input::IsMouseButtonPressed(ML_MOUSE_BUTTON_1))
+			if (Input::IsMouseButtonPressed(ML_MOUSE_BUTTON_MIDDLE))
 				m_LastMousePos = { x, y };
 			else
 				m_LastMousePos = { 0, 0 };

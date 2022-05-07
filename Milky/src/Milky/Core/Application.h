@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Milky/Core/Core.h"
+#include "Milky/Core/Base.h"
 
 #include "Milky/Core/Window.h"
 #include "Milky/Core/LayerStack.h"
