@@ -10,8 +10,8 @@
 
 namespace Milky {
 
-	OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool rotation, bool mouse)
-		: m_AspectRatio(aspectRatio), m_Camera(-m_AspectRatio * m_ZoomLevel, m_AspectRatio* m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel), m_Rotation(rotation), m_Mouse(mouse)
+	OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool mouse, bool rotation)
+		: m_AspectRatio(aspectRatio), m_Bounds({ -m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel }), m_Camera(m_Bounds.Left, m_Bounds.Right, m_Bounds.Bottom, m_Bounds.Top), m_Rotation(rotation), m_Mouse(mouse)
 	{
 	}
 
@@ -83,14 +83,14 @@ namespace Milky {
 		ML_PROFILE_FUNCTION();
 
 		EventDispatcher dispatcher(e);
-		if(m_Mouse)
-			dispatcher.Dispatch<MouseScrolledEvent>(ML_BIND_EVENT_FN(OrthographicCameraController::OnMouseScrolled));
+		dispatcher.Dispatch<MouseScrolledEvent>(ML_BIND_EVENT_FN(OrthographicCameraController::OnMouseScrolled));
 		dispatcher.Dispatch<WindowResizeEvent>(ML_BIND_EVENT_FN(OrthographicCameraController::OnWindowResized));
 	}
 
 	void OrthographicCameraController::Recaluclate()
 	{
-		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+		m_Bounds = { -m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel };
+		m_Camera.SetProjection(m_Bounds.Left, m_Bounds.Right, m_Bounds.Bottom, m_Bounds.Top);
 	}
 
 	bool OrthographicCameraController::OnMouseScrolled(MouseScrolledEvent& e)

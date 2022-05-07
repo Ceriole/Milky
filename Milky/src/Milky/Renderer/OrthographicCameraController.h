@@ -11,10 +11,19 @@ namespace Milky {
 #define CAMERA_MIN_ZOOM 0.1f
 #define CAMERA_MAX_ZOOM 20.0f
 
+	struct OrhographicCameraBounds
+	{
+		float Left, Right;
+		float Bottom, Top;
+
+		float GetWidth() { return Right - Left; }
+		float GetHeight() { return Top - Bottom; }
+	};
+
 	class OrthographicCameraController
 	{
 	public:
-		OrthographicCameraController(float aspectRatio, bool rotation = false, bool mouse = true);
+		OrthographicCameraController(float aspectRatio, bool mouse = true, bool rotation = false);
 
 		void OnUpdate(Timestep ts);
 		void OnEvent(Event& e);
@@ -27,6 +36,8 @@ namespace Milky {
 
 		void SetPosition(const glm::vec3& position) { m_CameraPosition = position; };
 		void SetRotation(float rotation) { m_CameraRotation = rotation; };
+
+		const OrhographicCameraBounds& GetBounds() const { return m_Bounds; };
 	private:
 		void Recaluclate();
 
@@ -37,6 +48,7 @@ namespace Milky {
 	private:
 		float m_AspectRatio;
 		float m_ZoomLevel = 1.0f;
+		OrhographicCameraBounds m_Bounds;
 		OrthographicCamera m_Camera;
 
 		bool m_Rotation, m_Mouse;
