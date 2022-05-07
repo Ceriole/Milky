@@ -32,14 +32,14 @@ namespace Milky {
 		const OrthographicCamera& GetCamera() const { return m_Camera; };
 
 		float GetZoomLevel() { return m_ZoomLevel; }
-		void SetZoomLevel(float level) { m_ZoomLevel = std::clamp(level, CAMERA_MIN_ZOOM, CAMERA_MAX_ZOOM); Recaluclate(); };
+		void SetZoomLevel(float level) { m_ZoomLevel = std::clamp(level, CAMERA_MIN_ZOOM, CAMERA_MAX_ZOOM); CalculateView(); };
 
 		void SetPosition(const glm::vec3& position) { m_CameraPosition = position; };
 		void SetRotation(float rotation) { m_CameraRotation = rotation; };
 
 		const OrhographicCameraBounds& GetBounds() const { return m_Bounds; };
 	private:
-		void Recaluclate();
+		void CalculateView();
 
 		bool OnMouseScrolled(MouseScrolledEvent& e);
 		bool OnMouseMoved(MouseMovedEvent& e);

@@ -5,6 +5,37 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
+// _ WATER
+// . DIRT
+static const uint32_t s_MapWidth = 24;
+static const char* s_MapTiles =
+"________________________"
+"________________________"
+"______..._______________"
+"______....._____________"
+"________......__________"
+"_______..,,,,...__._____"
+"______...,,,,,..__..____"
+"______.,,....,,._...____"
+"______...__..,,..,,..___"
+"_____...____..,,,,,..___"
+"____...______..,,,..____"
+"___....._____.,,,...____"
+"__...,,,,..,,,....______"
+"_____,,,,,,,,.._________"
+"__..______,,..___.._____"
+"__..,,,,__,,...__.._____"
+"___..,,,_,,,,..___._____"
+"____..,,,,,,,,..__..____"
+"_____....,,,...__...____"
+"________....____..._____"
+"______________....______"
+"___________.....________"
+"________________________"
+"________________________"
+;
+
 Sandbox2D::Sandbox2D()
 	: Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f, false), m_ParticleSystem(10000)
 {
@@ -16,9 +47,17 @@ void Sandbox2D::OnAttach()
 
 	m_CheckerTexture = Milky::Texture2D::Create("assets/textures/checkerboard.png");
 	m_SpriteSheet = Milky::Texture2D::Create("assets/game/textures/RPGpack_sheet_2X.png", {Milky::Texture2D::FilterType::NEAREST, Milky::Texture2D::FilterType::NEAREST });
+
 	m_TextureStairs = Milky::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 7, 6 }, { 128, 128 });
 	m_TextureBarrel = Milky::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 8, 2 }, { 128, 128 });
 	m_TextureTree = Milky::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 5, 1 }, { 128, 128 }, { 1, 2 });
+
+	m_MapWidth = s_MapWidth;
+	m_MapHeight = strlen(s_MapTiles) / s_MapWidth;
+
+	m_TextureMap['_'] = Milky::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 11, 11 }, { 128, 128 });	// Water
+	m_TextureMap['.'] = Milky::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 6, 11 }, { 128, 128 });	// Dirt
+	m_TextureMap[','] = Milky::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 1, 11 }, { 128, 128 });	// Grass
 
 	// Define particle properties
 	m_Particle.ColorBegin = { 254 / 255.0f, 212 / 255.0f, 123 / 255.0f, 1.0f };
@@ -28,6 +67,8 @@ void Sandbox2D::OnAttach()
 	m_Particle.Velocity = { 0.0f, 1.5f, 0.0f };
 	m_Particle.VelocityVariation = { 3.0f, 3.0f, 0.0f };
 	m_Particle.Position = { 0.0f, 0.0f, 0.0f };
+
+	m_CameraController.SetZoomLevel(5.0f);
 }
 
 void Sandbox2D::OnDetach()
@@ -96,6 +137,19 @@ void Sandbox2D::OnUpdate(Milky::Timestep ts)
 		m_ParticleSystem.OnRender(m_CameraController.GetCamera());
 
 		Milky::Renderer2D::BeginScene(m_CameraController.GetCamera()); // Lights, cameras, action!
+
+		for (uint32_t y = 0; y < m_MapHeight; y++)
+		{
+			for (uint32_t x = 0; x < m_MapWidth; x++)
+			{
+				char tileType = s_MapTiles[x + y * m_MapWidth];
+				Milky::Ref<Milky::SubTexture2D> tileTexture = m_TextureBarrel;
+				if (m_TextureMap.find(tileType) != m_TextureMap.end())
+					tileTexture = m_TextureMap[tileType];
+				Milky::Renderer2D::DrawQuad({ x - m_MapWidth / 2.0f, m_MapHeight - y - m_MapHeight / 2.0f }, { 1.0f, 1.0f }, tileTexture);
+			}
+		}
+
 		Milky::Renderer2D::DrawQuad({ 0.0f, 0.0f, 0.5f }, { 1.0f, 1.0f }, m_TextureStairs);
 		Milky::Renderer2D::DrawQuad({ 1.0f, 0.0f, 0.5f }, { 1.0f, 1.0f }, m_TextureBarrel);
 		Milky::Renderer2D::DrawQuad({ -1.0f, 0.5f, 0.5f }, { 1.0f, 2.0f }, m_TextureTree);

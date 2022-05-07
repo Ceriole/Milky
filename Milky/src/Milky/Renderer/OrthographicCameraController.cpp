@@ -87,7 +87,7 @@ namespace Milky {
 		dispatcher.Dispatch<WindowResizeEvent>(ML_BIND_EVENT_FN(OrthographicCameraController::OnWindowResized));
 	}
 
-	void OrthographicCameraController::Recaluclate()
+	void OrthographicCameraController::CalculateView()
 	{
 		m_Bounds = { -m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel };
 		m_Camera.SetProjection(m_Bounds.Left, m_Bounds.Right, m_Bounds.Bottom, m_Bounds.Top);
@@ -130,7 +130,7 @@ namespace Milky {
 		ML_PROFILE_FUNCTION();
 
 		m_AspectRatio = (float) e.GetWidth() / (float) e.GetHeight();
-		Recaluclate();
+		CalculateView();
 		return false;
 	}
 
