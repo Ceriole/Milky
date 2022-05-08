@@ -14,11 +14,11 @@ public:
 	virtual void OnImGuiRender() override;
 	virtual void OnEvent(Milky::Event& event) override;
 private:
+	Milky::OrthographicCameraController m_CameraController;
 
 	// v TEMPORARY v
 	Milky::Ref<Milky::VertexArray> m_SquareVA;
 	Milky::Ref<Milky::Shader> m_FlatColorShader;
-	Milky::OrthographicCameraController m_CameraController;
 	// ^ ========= ^
 
 	Milky::Ref<Milky::Texture2D> m_CheckerTexture;

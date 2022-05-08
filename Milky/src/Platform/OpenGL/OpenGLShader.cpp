@@ -30,6 +30,7 @@ namespace Milky {
 		ML_PROFILE_FUNCTION();
 
 		std::string shaderSrc = ReadFile(filepath);
+		ML_CORE_ASSERT(shaderSrc.size(), "Could not load shader file, or file is empty!");
 		std::unordered_map<GLenum, std::string> sources = PreProcess(shaderSrc);
 		Compile(sources);
 		

@@ -16,7 +16,7 @@ namespace Milky {
 	class  Application
 	{
 	public:
-		Application();
+		Application(const std::string& name = "Milky App");
 		virtual ~Application();
 
 		void OnEvent(Event& e);

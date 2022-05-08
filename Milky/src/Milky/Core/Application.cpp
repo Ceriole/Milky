@@ -9,14 +9,14 @@ namespace Milky {
 
 	Application* Application::s_Instance = nullptr;
 
-	Application::Application()
+	Application::Application(const std::string& name)
 	{
 		ML_PROFILE_FUNCTION();
 
 		ML_CORE_ASSERT(!s_Instance, "Only one instance of Application is allowed!");
 		s_Instance = this;
 
-		m_Window = std::unique_ptr<Window>(Window::Create());
+		m_Window = Window::Create(WindowProps(name));
 		m_Window->SetEveventCallback(ML_BIND_EVENT_FN(Application::OnEvent));
 
 		Renderer::Init();
