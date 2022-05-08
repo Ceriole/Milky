@@ -1,6 +1,5 @@
 # Binaries
 **/bin/
-!vendor/premake/bin
 bin-int/
 
 # VS Files and folder
@@ -12,3 +11,7 @@ bin-int/
 
 # Files
 imgui.ini
+
+# Directories
+MilkGlass/assets/cache
+scripts/__pycache__
