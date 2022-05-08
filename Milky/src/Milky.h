@@ -12,8 +12,6 @@
 #include "Milky/Core/Timestep.h"
 
 #include "Milky/Core/Input.h"
-#include "Milky/Core/KeyCodes.h"
-#include "Milky/Core/MouseButtonCodes.h"
 #include "Milky/Renderer/OrthographicCameraController.h"
 
 #include "Milky/ImGui/ImGuiLayer.h"

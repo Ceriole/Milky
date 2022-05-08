@@ -13,7 +13,6 @@ namespace Milky {
 		virtual void Init() override;
 		virtual void SwapBuffers() override;
 
-		virtual std::string GetInfoString() override;
 	private:
 		GLFWwindow* m_WindowHandle;
 	};

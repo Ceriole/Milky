@@ -3,8 +3,6 @@
 
 #include "Milky/Core/Application.h"
 #include "Milky/Core/Input.h"
-#include "Milky/Core/KeyCodes.h"
-#include "Milky/Core/MouseButtonCodes.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -87,6 +85,12 @@ namespace Milky {
 		dispatcher.Dispatch<WindowResizeEvent>(ML_BIND_EVENT_FN(OrthographicCameraController::OnWindowResized));
 	}
 
+	void OrthographicCameraController::OnResize(float width, float height)
+	{
+		m_AspectRatio = width / height;
+		CalculateView();
+	}
+
 	void OrthographicCameraController::CalculateView()
 	{
 		m_Bounds = { -m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel };
@@ -129,8 +133,7 @@ namespace Milky {
 	{
 		ML_PROFILE_FUNCTION();
 
-		m_AspectRatio = (float) e.GetWidth() / (float) e.GetHeight();
-		CalculateView();
+		OnResize((float)e.GetWidth(), (float)e.GetHeight());
 		return false;
 	}
 

@@ -44,14 +44,4 @@ namespace Milky {
 		glfwSwapBuffers(m_WindowHandle);
 	}
 
-	std::string OpenGLContext::GetInfoString()
-	{
-		std::stringstream ss;
-		ss << "OpenGL Context:" << std::endl;
-		ss << "\tVendor: " << glGetString(GL_VENDOR) << std::endl;
-		ss << "\tRenderer: " << glGetString(GL_RENDERER) << std::endl;
-		ss << "\tVersion: " << glGetString(GL_VERSION) << std::endl;
-		return ss.str();
-	}
-
 }
