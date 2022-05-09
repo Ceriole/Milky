@@ -13,13 +13,11 @@ Visual Studio 2022 is recommended, and is currently not tested on other platform
 
 Clone the repository with `git clone --recursive https://github.com/Ceriole/Milky`.
 
-If the repository has been cloned without the `--recursive` flag, use `git submodule update --init` to clone the submodules.
+<ins>**2. Generating the projects and downloading requirements:**</ins>
 
-<ins>**2. Generating the projects:**</ins>
+Run the [Setup.bat](https://github.com/Ceriole/Milky/blob/main/Scripts/Setup.bat) file found in `Scripts` folder to download all requirements and generate project files for vs2022.
 
-Run the [Win-GenProjects-VS2022.bat](https://github.com/Ceriole/Milky/blob/main/Scripts/Win-GenProjects-VS2022.bat) file found in `Scripts` folder to generate VS2022 project and solution files.
-
-*Run [Win-GenProjects-VS2022.bat](https://github.com/Ceriole/Milky/blob/main/Scripts/Win-GenProjects-VS2022.bat) whenever you create or move files and folders!*
+*Run [Win-GenProjects-VS2022.bat](https://github.com/Ceriole/Milky/blob/main/Scripts/Win-GenProjects-VS2022.bat) or [Setup.bat](https://github.com/Ceriole/Milky/blob/main/Scripts/Setup.bat) whenever you create or move files and folders!*
 
 [![Twitter](https://img.shields.io/badge/%40ceriole_arts--blue.svg?style=social&logo=Twitter)](https://twitter.com/ceriole_arts)
 [![Instagram](https://img.shields.io/badge/ceriole_arts--red.svg?style=social&logo=Instagram)](https://www.instagram.com/ceriole_arts)
