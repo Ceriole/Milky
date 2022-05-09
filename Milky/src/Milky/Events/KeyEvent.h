@@ -1,27 +1,28 @@
 #pragma once
 
-#include "Milky/Events/KeyEvent.h"
+#include "Milky/Events/Event.h"
+#include "Milky/Core/KeyCodes.h"
 
 namespace Milky {
 
 	class  KeyEvent : public Event
 	{
 	public:
-		inline int GetKeyCode() const { return m_KeyCode; }
+		inline KeyCode GetKeyCode() const { return m_KeyCode; }
 
 		EVENT_CLASS_CATEGORY(EventCategoryKeyboard | EventCategoryInput)
 	protected:
-		KeyEvent(int keycode)
+		KeyEvent(KeyCode keycode)
 			: m_KeyCode(keycode)
 		{}
 
-		int m_KeyCode;
+		KeyCode m_KeyCode;
 	};
 
 	class  KeyPressedEvent : public KeyEvent
 	{
 	public:
-		KeyPressedEvent(int keycode, int repeatcount)
+		KeyPressedEvent(KeyCode keycode, int repeatcount)
 			: KeyEvent(keycode), m_RepeatCount(repeatcount)
 		{}
 
@@ -42,7 +43,7 @@ namespace Milky {
 	class  KeyReleasedEvent : public KeyEvent
 	{
 	public:
-		KeyReleasedEvent(int keycode)
+		KeyReleasedEvent(KeyCode keycode)
 			: KeyEvent(keycode)
 		{}
 
@@ -59,7 +60,7 @@ namespace Milky {
 	class  KeyTypedEvent : public KeyEvent
 	{
 	public:
-		KeyTypedEvent(int keycode)
+		KeyTypedEvent(KeyCode keycode)
 			: KeyEvent(keycode)
 		{}
 

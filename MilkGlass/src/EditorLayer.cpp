@@ -34,7 +34,8 @@ namespace Milky {
 	{
 		ML_PROFILE_FUNCTION();
 
-		m_CameraController.OnUpdate(ts);
+		if(m_ViewportFocused)
+			m_CameraController.OnUpdate(ts);
 
 		Milky::Renderer2D::ResetStats();
 		{
@@ -113,7 +114,7 @@ namespace Milky {
 		// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
 		if (!opt_padding)
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		ImGui::Begin("DockSpace Demo", &dockingEnabled, window_flags);
+		ImGui::Begin("Editor DockSpace", &dockingEnabled, window_flags);
 		if (!opt_padding)
 			ImGui::PopStyleVar();
 
@@ -122,9 +123,10 @@ namespace Milky {
 
 		// Submit the DockSpace
 		ImGuiIO& io = ImGui::GetIO();
+		ImGuiID dockspace_id;
 		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
 		{
-			ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+			dockspace_id = ImGui::GetID("EditorDockSpace");
 			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 		}
 
@@ -140,7 +142,8 @@ namespace Milky {
 			ImGui::EndMenuBar();
 		}
 
-		ImGui::Begin("Settings"); {
+		if (ImGui::Begin("Settings"))
+		{
 			auto stats = Milky::Renderer2D::GetStats();
 
 			ImGui::Text("Renderer2D Stats:");
@@ -160,21 +163,27 @@ namespace Milky {
 				m_CameraController.SetZoomLevel(1.0f);
 			}
 
-			
-		} ImGui::End();
+			ImGui::End();
+		}
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-		ImGui::Begin("Viewport");
-		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-		if(m_ViewportSize != *((glm::vec2*)&viewportPanelSize))
+		if (ImGui::Begin("Viewport"))
 		{
-			m_Framebuffer->Resize((uint32_t)viewportPanelSize.x, (uint32_t)viewportPanelSize.y);
-			m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
-			m_CameraController.OnResize(viewportPanelSize.x, viewportPanelSize.y);
+			m_ViewportFocused = ImGui::IsWindowFocused();
+			m_ViewportHovered = ImGui::IsWindowHovered();
+			Application::Get().GetImGuiLayer()->SetBlockEvents(!m_ViewportFocused || !m_ViewportHovered);
+			ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+			if (m_ViewportSize != *((glm::vec2*)&viewportPanelSize) && viewportPanelSize.x > 0 && viewportPanelSize.y > 0)
+			{
+				m_Framebuffer->Resize((uint32_t)viewportPanelSize.x, (uint32_t)viewportPanelSize.y);
+				m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+
+				m_CameraController.OnResize(viewportPanelSize.x, viewportPanelSize.y);
+			}
+			uint32_t textureId = m_Framebuffer->GetColorAttachmentRendererID();
+			ImGui::Image((void*)textureId, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+			ImGui::End();
 		}
-		uint32_t textureId = m_Framebuffer->GetColorAttachmentRendererID();
-		ImGui::Image((void*)textureId, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-		ImGui::End();
 		ImGui::PopStyleVar();
 
 		ImGui::End();

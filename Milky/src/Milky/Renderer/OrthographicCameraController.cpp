@@ -9,7 +9,7 @@
 namespace Milky {
 
 	OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool mouse, bool rotation)
-		: m_AspectRatio(aspectRatio), m_Bounds({ -m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel }), m_Camera(m_Bounds.Left, m_Bounds.Right, m_Bounds.Bottom, m_Bounds.Top), m_Rotation(rotation), m_Mouse(mouse)
+		:  m_AspectRatio(aspectRatio), m_Bounds({-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel}), m_Camera(m_Bounds.Left, m_Bounds.Right, m_Bounds.Bottom, m_Bounds.Top), m_Rotation(rotation), m_Mouse(mouse)
 	{
 	}
 
@@ -30,27 +30,27 @@ namespace Milky {
 				m_CameraPosition.y += ((dy * 2.0f) / Application::Get().GetWindow().GetHeight()) * m_ZoomLevel;
 			}
 
-			if (Input::IsMouseButtonPressed(ML_MOUSE_BUTTON_MIDDLE))
+			if (Input::IsMouseButtonPressed(Mouse::ButtonMiddle))
 				m_LastMousePos = { x, y };
 			else
 				m_LastMousePos = { 0, 0 };
 		}
-		if (Input::IsKeyPressed(ML_KEY_A))
+		if (Input::IsKeyPressed(Key::A))
 		{
 			m_CameraPosition.x -= cos(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * ts;
 			m_CameraPosition.y -= sin(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * ts;
 		}
-		else if (Input::IsKeyPressed(ML_KEY_D))
+		else if (Input::IsKeyPressed(Key::D))
 		{
 			m_CameraPosition.x += cos(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * ts;
 			m_CameraPosition.y += sin(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * ts;
 		}
-		if (Input::IsKeyPressed(ML_KEY_W))
+		if (Input::IsKeyPressed(Key::W))
 		{
 			m_CameraPosition.x += -sin(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * ts;
 			m_CameraPosition.y += cos(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * ts;
 		}
-		else if (Input::IsKeyPressed(ML_KEY_S))
+		else if (Input::IsKeyPressed(Key::S))
 		{
 			m_CameraPosition.x -= -sin(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * ts;
 			m_CameraPosition.y -= cos(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * ts;
@@ -60,9 +60,9 @@ namespace Milky {
 
 		if (m_Rotation)
 		{
-			if (Input::IsKeyPressed(ML_KEY_Q))
+			if (Input::IsKeyPressed(Key::Q))
 				m_CameraRotation += m_CameraRotationSpeed * ts;
-			else if (Input::IsKeyPressed(ML_KEY_E))
+			else if (Input::IsKeyPressed(Key::E))
 				m_CameraRotation -= m_CameraRotationSpeed * ts;
 
 			if (m_CameraRotation > 180.0f)
@@ -99,22 +99,8 @@ namespace Milky {
 
 	bool OrthographicCameraController::OnMouseScrolled(MouseScrolledEvent& e)
 	{
-		ML_PROFILE_FUNCTION();
-
-		const float scrWidth = (float) Application::Get().GetWindow().GetWidth();
-		const float scrHeight = (float) Application::Get().GetWindow().GetHeight();
-		float mx = Input::GetMouseX() / scrWidth;
-		float my = Input::GetMouseY() / scrHeight;
-		mx = (mx *  2.0f) - 1.0f;
-		my = (my * -2.0f) + 1.0f;
-
-		glm::vec4 preZoom = glm::vec4(mx, my, 0, 0) * glm::inverse(m_Camera.GetViewProjectionMatrix());
-
+		// TODO zoom towards mouse postion
 		SetZoomLevel(m_ZoomLevel * std::pow(1.2f, -e.GetYOffset() / 2.0f));
-
-		glm::vec4 postZoom = glm::vec4(mx, my, 0, 0) * glm::inverse(m_Camera.GetViewProjectionMatrix());
-
-		m_CameraPosition += glm::vec3(preZoom) - glm::vec3(postZoom);
 
 		return false;
 	}
