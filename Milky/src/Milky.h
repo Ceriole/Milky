@@ -15,6 +15,11 @@
 #include "Milky/Renderer/OrthographicCameraController.h"
 
 #include "Milky/ImGui/ImGuiLayer.h"
+
+#include "Milky/Scene/Scene.h"
+#include "Milky/Scene/Entity.h"
+#include "Milky/Scene/ScriptableEntity.h"
+#include "Milky/Scene/Components.h"
 // ====================================
 
 // = RENDERER =========================

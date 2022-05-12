@@ -17,7 +17,8 @@ project "MilkGlass"
 		"%{wks.location}/Milky/vendor/spdlog/include",
 		"%{wks.location}/Milky/src",
 		"%{wks.location}/Milky/vendor",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.entt}"
 	}
 
 	links

@@ -8,7 +8,7 @@
 namespace Milky {
 
 	EditorLayer::EditorLayer()
-		: Layer("MilkGlassEditorLayer"), m_CameraController(1280.0f / 720.0f)
+		: Layer("MilkGlassEditorLayer"), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f })
 	{
 	}
 
@@ -16,12 +16,54 @@ namespace Milky {
 	{
 		ML_PROFILE_FUNCTION();
 
-		m_CheckerTexture = Milky::Texture2D::Create("assets/textures/checkerboard.png");
+		m_CheckerTexture = Texture2D::Create("assets/textures/checkerboard.png");
 
-		Milky::FramebufferSpecification framebufferSpec;
+		FramebufferSpecification framebufferSpec;
 		framebufferSpec.Width = 1280;
 		framebufferSpec.Height = 720;
-		m_Framebuffer = Milky::Framebuffer::Create(framebufferSpec);
+		m_Framebuffer = Framebuffer::Create(framebufferSpec);
+
+		m_ActiveScene = CreateRef<Scene>();
+
+		m_SquareEntity0 = m_ActiveScene->CreateEntity("Square 0");
+		m_SquareEntity0.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+
+		m_CameraEntity = m_ActiveScene->CreateEntity("Camera Entity");
+		m_CameraEntity.AddComponent<CameraComponent>();
+
+		class CameraController : public ScriptableEntity
+		{
+		public:
+			void OnCreate() override
+			{}
+
+			void OnDestroy() override
+			{}
+
+			void OnUpdate(Timestep ts) override
+			{
+				auto& camera = GetComponent<CameraComponent>();
+
+				if (!camera.Primary)
+					return;
+
+				auto& transform = GetComponent<TransformComponent>();
+				float speed = 5.0f;
+
+				if (Input::IsKeyPressed(Key::A))
+					transform.Position.x -= speed * ts;
+				if (Input::IsKeyPressed(Key::D))
+					transform.Position.x += speed * ts;
+				if (Input::IsKeyPressed(Key::W))
+					transform.Position.y += speed * ts;
+				if (Input::IsKeyPressed(Key::S))
+					transform.Position.y -= speed * ts;
+			}
+		};
+
+		m_CameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+
+		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 	}
 
 	void EditorLayer::OnDetach()
@@ -30,49 +72,27 @@ namespace Milky {
 
 	}
 
-	void EditorLayer::OnUpdate(Milky::Timestep ts)
+	void EditorLayer::OnUpdate(Timestep ts)
 	{
 		ML_PROFILE_FUNCTION();
 
-		if(m_ViewportFocused)
-			m_CameraController.OnUpdate(ts);
-
-		Milky::Renderer2D::ResetStats();
+		if (Milky::FramebufferSpecification spec = m_Framebuffer->GetSpecification(); m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && (spec.Width != m_ViewportSize.x || spec.Height != m_ViewportSize.y))
 		{
-			ML_PROFILE_SCOPE("Render Prep");
-			m_Framebuffer->Bind();
-			Milky::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
-			Milky::RenderCommand::Clear();
+			m_Framebuffer->Resize((uint32_t) m_ViewportSize.x, (uint32_t) m_ViewportSize.y);
+
+			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		}
 
-		{
-			ML_PROFILE_SCOPE("Render Draw");
+		// Render
+		Renderer2D::ResetStats();
+		m_Framebuffer->Bind();
+		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
+		RenderCommand::Clear();
 
-			static float rot = 0.0f;
-			rot += ts * 90.0f;
-			float size = 1.0f + 0.5f * glm::sin(glm::radians(rot));
-			glm::vec4 inverseColor = { 1 - m_SquareColor.r, 1 - m_SquareColor.g, 1 - m_SquareColor.b, m_SquareColor.a };
+		// Update scene
+		m_ActiveScene->OnUpdate(ts);
 
-			Milky::Renderer2D::BeginScene(m_CameraController.GetCamera()); // Lights, cameras, action!
-			Milky::Renderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, m_SquareColor);
-			Milky::Renderer2D::DrawQuad({ 0.5f, -0.5f }, { 0.5f, 0.65f }, inverseColor);
-			Milky::Renderer2D::DrawQuad({ 0.0f, 0.0f, -0.1f }, { 20.0f, 20.0f }, m_CheckerTexture, glm::vec4(1.0f), 20.0f);
-			Milky::Renderer2D::DrawRotatedQuad({ 0.0f, 0.0f }, { 0.05f, 0.05f }, glm::radians(45.0f), { 1,0,0,1 });
-			Milky::Renderer2D::DrawRotatedQuad({ -2.0f, 0.0f }, glm::vec2(size), glm::radians(rot), m_CheckerTexture, { 1,0,1,1 }, 2.0f);
-			Milky::Renderer2D::EndScene(); // And cut!
-
-			Milky::Renderer2D::BeginScene(m_CameraController.GetCamera());
-			for (float y = -5.0f; y <= 5.0f; y += 0.5f)
-			{
-				for (float x = -5.0f; x <= 5.0f; x += 0.5f)
-				{
-					glm::vec4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.75f };
-					Milky::Renderer2D::DrawQuad({ x, y }, { 0.45f, 0.45f }, color);
-				}
-			}
-			Milky::Renderer2D::EndScene();
-			m_Framebuffer->Unbind();
-		}
+		m_Framebuffer->Unbind();
 	}
 
 	void EditorLayer::OnImGuiRender()
@@ -135,36 +155,51 @@ namespace Milky {
 			if (ImGui::BeginMenu("File"))
 			{
 
-				if (ImGui::MenuItem("Exit", NULL, false)) Milky::Application::Get().Close();
+				if (ImGui::MenuItem("Exit", NULL, false)) Application::Get().Close();
 				ImGui::EndMenu();
 			}
 
 			ImGui::EndMenuBar();
 		}
 
+		m_SceneHierarchyPanel.OnImguiRender();
+
 		if (ImGui::Begin("Settings"))
 		{
-			auto stats = Milky::Renderer2D::GetStats();
-
-			ImGui::Text("Renderer2D Stats:");
-			ImGui::Indent();
-			ImGui::BulletText("Draw Calls: %d", stats.DrawCalls);
-			ImGui::BulletText("Quads: %d", stats.QuadCount);
-			ImGui::BulletText("Vertices: %d", stats.GetTotalVertexCount());
-			ImGui::BulletText("Indices: %d", stats.GetTotalIndexCount());
-			ImGui::Unindent();
-
-			ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SquareColor));
-			ImGui::TextDisabled("Use [W],[A],[S],[D] OR [MMB] + mouse to pan the camera.");
-			if (ImGui::Button("Reset camera"))
+			auto stats = Renderer2D::GetStats();
+			if (ImGui::TreeNodeEx("Renderer2D Stats", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				m_CameraController.SetPosition({ 0,0,0 });
-				m_CameraController.SetRotation(0);
-				m_CameraController.SetZoomLevel(1.0f);
+				if (ImGui::BeginTable("renderer2Dstats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+				{
+					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, { 0.2f, 0.2f, 0.2f, 1.0f});
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::Text("Draw Calls");
+					ImGui::TableNextColumn();
+					ImGui::Text("%d", stats.DrawCalls);
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::Text("Quads");
+					ImGui::TableNextColumn();
+					ImGui::Text("%d", stats.QuadCount);
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::Text("Vertices");
+					ImGui::TableNextColumn();
+					ImGui::Text("%d", stats.GetTotalVertexCount());
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::Text("Indices");
+					ImGui::TableNextColumn();
+					ImGui::Text("%d", stats.GetTotalIndexCount());
+					ImGui::EndTable();
+					ImGui::PopStyleColor();
+				}
+				ImGui::TreePop();
 			}
 
 			ImGui::End();
-		}
+		} // Settings window end
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
 		if (ImGui::Begin("Viewport"))
@@ -172,16 +207,12 @@ namespace Milky {
 			m_ViewportFocused = ImGui::IsWindowFocused();
 			m_ViewportHovered = ImGui::IsWindowHovered();
 			Application::Get().GetImGuiLayer()->SetBlockEvents(!m_ViewportFocused || !m_ViewportHovered);
+			
 			ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-			if (m_ViewportSize != *((glm::vec2*)&viewportPanelSize) && viewportPanelSize.x > 0 && viewportPanelSize.y > 0)
-			{
-				m_Framebuffer->Resize((uint32_t)viewportPanelSize.x, (uint32_t)viewportPanelSize.y);
-				m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+			m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
 
-				m_CameraController.OnResize(viewportPanelSize.x, viewportPanelSize.y);
-			}
 			uint32_t textureId = m_Framebuffer->GetColorAttachmentRendererID();
-			ImGui::Image((void*)textureId, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+			ImGui::Image((void*)(uint64_t)textureId, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 			ImGui::End();
 		}
 		ImGui::PopStyleVar();
@@ -189,9 +220,7 @@ namespace Milky {
 		ImGui::End();
 	}
 
-	void EditorLayer::OnEvent(Milky::Event& event)
-	{
-		m_CameraController.OnEvent(event);
-	}
+	void EditorLayer::OnEvent(Event& event)
+	{}
 
 }

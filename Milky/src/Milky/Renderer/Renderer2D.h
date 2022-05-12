@@ -3,6 +3,7 @@
 #include "Milky/Renderer/OrthographicCamera.h"
 #include "Milky/Renderer/Texture.h"
 #include "Milky/Renderer/SubTexture2D.h"
+#include "Milky/Renderer/Camera.h"
 
 namespace Milky {
 
@@ -12,7 +13,8 @@ namespace Milky {
 		static void Init();
 		static void Shutdown();
 
-		static void BeginScene(const OrthographicCamera& camera);
+		static void BeginScene(const Camera& camera, const glm::mat4& transform);
+		static void BeginScene(const OrthographicCamera& camera); // TODO: Remove
 		static void EndScene();
 		static void Flush();
 

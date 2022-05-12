@@ -8,8 +8,11 @@
 
 #include "Milky/Core/Application.h"
 
+
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
+
+#define ML_ENABLE_CUSTOM_FONT 1
 
 namespace Milky {
 
@@ -38,9 +41,11 @@ namespace Milky {
 		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
 		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
 
+#if ML_ENABLE_CUSTOM_FONT
 		float fontSize = 18.0f;// *2.0f;
 		io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Bold.ttf", fontSize);
 		io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Regular.ttf", fontSize);
+#endif
 
 		ImGui::StyleColorsDark();
 
