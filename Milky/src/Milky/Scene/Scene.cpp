@@ -28,6 +28,11 @@ namespace Milky {
 		return entity;
 	}
 
+	void Scene::DestroyEntity(Entity entity)
+	{
+		m_Registry.destroy(entity);
+	}
+
 	void Scene::OnUpdate(Timestep ts)
 	{
 		// Update entity scripts
@@ -48,21 +53,14 @@ namespace Milky {
 		}
 
 		// Render sprites
+		
+		Entity mainCameraEntity = GetPrimaryCameraEntity();
 		Camera* mainCamera = nullptr;
 		glm::mat4* cameraTransform = nullptr;
+		if (mainCameraEntity)
 		{
-			auto view = m_Registry.view<TransformComponent, CameraComponent>();
-			for (auto entity : view)
-			{
-				auto [transform, camera] = view.get<TransformComponent, CameraComponent>(entity);
-
-				if (camera.Primary)
-				{
-					mainCamera = &camera.Camera;
-					cameraTransform = &transform.GetTransform();
-					break;
-				}
-			}
+			mainCamera = &mainCameraEntity.GetComponent<CameraComponent>().Camera;
+			cameraTransform = &mainCameraEntity.GetComponent<TransformComponent>().GetTransform();
 		}
 
 		if (mainCamera)
@@ -81,13 +79,25 @@ namespace Milky {
 		}
 	}
 
+	Entity Scene::GetPrimaryCameraEntity()
+	{
+		auto view = m_Registry.view<CameraComponent>();
+		for (auto entity : view)
+		{
+			const auto& camera = view.get<CameraComponent>(entity);
+			if (camera.Primary)
+				return Entity{ entity, this };
+		}
+		return {};
+	}
+
 	void Scene::OnViewportResize(uint32_t width, uint32_t height)
 	{
 		m_ViewportWidth = width;
 		m_ViewportHeight = height;
 
 		// Resize all entities with CameraComponent AND have FixedAspectRatio set to false.
-		auto view = m_Registry.view<CameraComponent>();
+		auto view = m_Registry.view<CameraComponent, TransformComponent>();
 		for (auto entity : view)
 		{
 			auto& cameraComponent = view.get<CameraComponent>(entity);
@@ -97,5 +107,34 @@ namespace Milky {
 			}
 		}
 	}
+
+	template<>
+	void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)
+	{}
+
+	template<typename Comp>
+	void Scene::OnComponentAdded(Entity entity, Comp& component)
+	{
+		static_assert(false);
+	}
+
+	template<>
+	void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component)
+	{
+		if (m_ViewportWidth > 0 && m_ViewportHeight > 0)
+			component.Camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
+	}
+
+	template<>
+	void Scene::OnComponentAdded<SpriteRendererComponent>(Entity entity, SpriteRendererComponent& component)
+	{}
+
+	template<>
+	void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component)
+	{}
+
+	template<>
+	void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
+	{}
 
 }

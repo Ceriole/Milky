@@ -8,11 +8,10 @@
 
 #include "Milky/Core/Application.h"
 
-
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
-#define ML_ENABLE_CUSTOM_FONT 1
+#define ML_ENABLE_CUSTOM_STYLE 1
 
 namespace Milky {
 
@@ -41,14 +40,14 @@ namespace Milky {
 		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
 		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
 
-#if ML_ENABLE_CUSTOM_FONT
+#if ML_ENABLE_CUSTOM_STYLE
 		float fontSize = 18.0f;// *2.0f;
 		io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Bold.ttf", fontSize);
 		io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Regular.ttf", fontSize);
 #endif
 
 		ImGui::StyleColorsDark();
-
+		
 		ImGuiStyle& style = ImGui::GetStyle();
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
@@ -56,7 +55,9 @@ namespace Milky {
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 
+#if ML_ENABLE_CUSTOM_STYLE
 		SetDarkThemeColors();
+#endif
 
 		Application& app = Application::Get();
 		GLFWwindow* window = static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow());

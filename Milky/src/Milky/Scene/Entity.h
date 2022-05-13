@@ -17,7 +17,9 @@ namespace Milky {
 		Comp& AddComponent(Args&&... args)
 		{
 			ML_CORE_ASSERT(!HasComponent<Comp>(), "Entity already contains component!");
-			return m_Scene->m_Registry.emplace<Comp>(m_Handle, std::forward<Args>(args)...);
+			Comp& component = m_Scene->m_Registry.emplace<Comp>(m_Handle, std::forward<Args>(args)...);
+			m_Scene->OnComponentAdded<Comp>(*this, component);
+			return component;
 		}
 		template<typename... Comps>
 		decltype(auto) GetComponent()

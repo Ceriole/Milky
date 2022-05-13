@@ -8,15 +8,13 @@
 namespace Milky {
 
 	EditorLayer::EditorLayer()
-		: Layer("MilkGlassEditorLayer"), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f })
+		: Layer("MilkGlassEditorLayer")
 	{
 	}
 
 	void EditorLayer::OnAttach()
 	{
 		ML_PROFILE_FUNCTION();
-
-		m_CheckerTexture = Texture2D::Create("assets/textures/checkerboard.png");
 
 		FramebufferSpecification framebufferSpec;
 		framebufferSpec.Width = 1280;
@@ -27,6 +25,9 @@ namespace Milky {
 
 		m_SquareEntity0 = m_ActiveScene->CreateEntity("Square 0");
 		m_SquareEntity0.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+
+		m_SquareEntity1 = m_ActiveScene->CreateEntity("Square 1");
+		m_SquareEntity1.AddComponent<SpriteRendererComponent>(glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
 
 		m_CameraEntity = m_ActiveScene->CreateEntity("Camera Entity");
 		m_CameraEntity.AddComponent<CameraComponent>();
@@ -42,6 +43,9 @@ namespace Milky {
 
 			void OnUpdate(Timestep ts) override
 			{
+				if (!(HasComponent<CameraComponent>() && HasComponent<TransformComponent>()))
+					return;
+
 				auto& camera = GetComponent<CameraComponent>();
 
 				if (!camera.Primary)
@@ -50,14 +54,33 @@ namespace Milky {
 				auto& transform = GetComponent<TransformComponent>();
 				float speed = 5.0f;
 
-				if (Input::IsKeyPressed(Key::A))
-					transform.Position.x -= speed * ts;
-				if (Input::IsKeyPressed(Key::D))
-					transform.Position.x += speed * ts;
-				if (Input::IsKeyPressed(Key::W))
-					transform.Position.y += speed * ts;
-				if (Input::IsKeyPressed(Key::S))
-					transform.Position.y -= speed * ts;
+				switch (camera.Camera.GetProjectionType())
+				{
+				case SceneCamera::ProjectionType::Orthographic:
+					if (Input::IsKeyPressed(Key::A))
+						transform.Translation.x -= speed * ts;
+					if (Input::IsKeyPressed(Key::D))
+						transform.Translation.x += speed * ts;
+					if (Input::IsKeyPressed(Key::W))
+						transform.Translation.y += speed * ts;
+					if (Input::IsKeyPressed(Key::S))
+						transform.Translation.y -= speed * ts;
+					break;
+				case SceneCamera::ProjectionType::Perspective:
+					if (Input::IsKeyPressed(Key::A))
+						transform.Translation.x -= speed * ts;
+					if (Input::IsKeyPressed(Key::D))
+						transform.Translation.x += speed * ts;
+					if (Input::IsKeyPressed(Key::W))
+						transform.Translation.z -= speed * ts;
+					if (Input::IsKeyPressed(Key::S))
+						transform.Translation.z += speed * ts;
+					if (Input::IsKeyPressed(Key::Q))
+						transform.Rotation.y -= speed * ts;
+					if (Input::IsKeyPressed(Key::E))
+						transform.Rotation.y += speed * ts;
+					break;
+				}
 			}
 		};
 
@@ -154,7 +177,6 @@ namespace Milky {
 		{
 			if (ImGui::BeginMenu("File"))
 			{
-
 				if (ImGui::MenuItem("Exit", NULL, false)) Application::Get().Close();
 				ImGui::EndMenu();
 			}
@@ -171,7 +193,7 @@ namespace Milky {
 			{
 				if (ImGui::BeginTable("renderer2Dstats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
 				{
-					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, { 0.2f, 0.2f, 0.2f, 1.0f});
+					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBgHovered]);
 					ImGui::TableNextRow();
 					ImGui::TableNextColumn();
 					ImGui::Text("Draw Calls");

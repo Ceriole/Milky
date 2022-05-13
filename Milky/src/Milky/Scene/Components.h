@@ -24,19 +24,19 @@ namespace Milky
 
 	struct TransformComponent
 	{
-		glm::vec3 Position = glm::vec3(0.0f);
+		glm::vec3 Translation = glm::vec3(0.0f);
 		glm::vec3 Rotation = glm::vec3(0.0f);
 		glm::vec3 Scale = glm::vec3(1.0f);
 
 		TransformComponent() = default;
 		TransformComponent(const TransformComponent&) = default;
 		TransformComponent(const glm::vec3& translation)
-			: Position(translation) {}
+			: Translation(translation) {}
 
 		glm::mat4 GetTransform() const
 		{
 			// TODO: Fix rotation
-			return glm::translate(glm::mat4(1.0f), Position) * glm::scale(glm::mat4(1.0f), Scale);
+			return glm::translate(glm::mat4(1.0f), Translation) * glm::scale(glm::mat4(1.0f), Scale);
 		}
 	};
 

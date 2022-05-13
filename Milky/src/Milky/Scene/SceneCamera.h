@@ -7,7 +7,7 @@ namespace Milky {
 	class SceneCamera : public Camera
 	{
 	public:
-		enum class ProjectionType { Perspective = 0, Orthographic = 1 };
+		enum class ProjectionType { Perspective = 0, Orthographic = 1, _Count = 2 };
 	public:
 		SceneCamera();
 		virtual ~SceneCamera() = default;
