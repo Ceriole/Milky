@@ -5,6 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Milky/ImGui/ImGuiUtil.h"
+
 namespace Milky {
 
 	EditorLayer::EditorLayer()
@@ -26,8 +28,14 @@ namespace Milky {
 		m_SquareEntity0 = m_ActiveScene->CreateEntity("Square 0");
 		m_SquareEntity0.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
 
+		auto& transform0 = m_SquareEntity0.GetComponent<TransformComponent>();
+		transform0.Translation.x = -1.0f;
+
 		m_SquareEntity1 = m_ActiveScene->CreateEntity("Square 1");
 		m_SquareEntity1.AddComponent<SpriteRendererComponent>(glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+
+		auto& transform1 = m_SquareEntity1.GetComponent<TransformComponent>();
+		transform1.Translation.x = 1.0f;
 
 		m_CameraEntity = m_ActiveScene->CreateEntity("Camera Entity");
 		m_CameraEntity.AddComponent<CameraComponent>();
@@ -52,7 +60,8 @@ namespace Milky {
 					return;
 
 				auto& transform = GetComponent<TransformComponent>();
-				float speed = 5.0f;
+				constexpr float speed = 5.0f;
+				constexpr float rotationSpeed = glm::pi<float>() / 2.0f;
 
 				switch (camera.Camera.GetProjectionType())
 				{
@@ -68,17 +77,29 @@ namespace Milky {
 					break;
 				case SceneCamera::ProjectionType::Perspective:
 					if (Input::IsKeyPressed(Key::A))
-						transform.Translation.x -= speed * ts;
+					{
+						transform.Translation.x -= speed * glm::cos(transform.Rotation.y) * ts;
+						transform.Translation.z += speed * glm::sin(transform.Rotation.y) * ts;
+					}
 					if (Input::IsKeyPressed(Key::D))
-						transform.Translation.x += speed * ts;
+					{
+						transform.Translation.x += speed * glm::cos(transform.Rotation.y) * ts;
+						transform.Translation.z -= speed * glm::sin(transform.Rotation.y) * ts;
+					}
 					if (Input::IsKeyPressed(Key::W))
-						transform.Translation.z -= speed * ts;
+					{
+						transform.Translation.z -= speed * glm::cos(transform.Rotation.y) * ts;
+						transform.Translation.x -= speed * glm::sin(transform.Rotation.y) * ts;
+					}
 					if (Input::IsKeyPressed(Key::S))
-						transform.Translation.z += speed * ts;
+					{
+						transform.Translation.z += speed * glm::cos(transform.Rotation.y) * ts;
+						transform.Translation.x += speed * glm::sin(transform.Rotation.y) * ts;
+					}
 					if (Input::IsKeyPressed(Key::Q))
-						transform.Rotation.y -= speed * ts;
+						transform.Rotation.y += rotationSpeed * ts;
 					if (Input::IsKeyPressed(Key::E))
-						transform.Rotation.y += speed * ts;
+						transform.Rotation.y -= rotationSpeed * ts;
 					break;
 				}
 			}
@@ -181,6 +202,12 @@ namespace Milky {
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("Options"))
+			{
+				GuiThemeManager::ShowThemeMenu();
+				ImGui::EndMenu();
+			}
+
 			ImGui::EndMenuBar();
 		}
 
@@ -193,7 +220,7 @@ namespace Milky {
 			{
 				if (ImGui::BeginTable("renderer2Dstats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
 				{
-					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBgHovered]);
+					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBgActive]);
 					ImGui::TableNextRow();
 					ImGui::TableNextColumn();
 					ImGui::Text("Draw Calls");

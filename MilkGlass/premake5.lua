@@ -18,6 +18,7 @@ project "MilkGlass"
 		"%{wks.location}/Milky/src",
 		"%{wks.location}/Milky/vendor",
 		"%{IncludeDir.glm}",
+		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.entt}"
 	}
 

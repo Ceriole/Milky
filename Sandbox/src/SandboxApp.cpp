@@ -183,7 +183,7 @@ public:
 		Milky::EventDispatcher dispatcher = Milky::EventDispatcher(event);
 
 		dispatcher.Dispatch<Milky::KeyPressedEvent>([](Milky::KeyPressedEvent& e) {
-			if (e.GetKeyCode() == ML_KEY_ESCAPE)
+			if (e.GetKeyCode() == Milky::Key::Escape)
 			{
 				Milky::Application::Get().Close();
 				return true;
@@ -196,6 +196,7 @@ public:
 	{
 		ImGui::Begin("Settings");
 		ImGui::ColorEdit3("Square Color", glm::value_ptr(m_SquareColor));
+
 		ImGui::End();
 	}
 

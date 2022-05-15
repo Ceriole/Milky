@@ -68,6 +68,7 @@ namespace Milky {
 			Renderer2D::BeginScene(mainCamera->GetProjection(), *cameraTransform);
 
 			auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+			int squares = 0;
 			for (auto entity : group)
 			{
 				auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
@@ -108,15 +109,15 @@ namespace Milky {
 		}
 	}
 
-	template<>
-	void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)
-	{}
-
 	template<typename Comp>
 	void Scene::OnComponentAdded(Entity entity, Comp& component)
 	{
 		static_assert(false);
 	}
+
+	template<>
+	void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)
+	{}
 
 	template<>
 	void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component)

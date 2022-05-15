@@ -16,6 +16,8 @@ namespace Milky {
 
 		void OnImguiRender();
 	private:
+		void DrawNewEntityMenu();
+		void DrawAddComponentMenu();
 		void DrawEntityNode(Entity entity);
 		void DrawComponents(Entity entity);
 	private:

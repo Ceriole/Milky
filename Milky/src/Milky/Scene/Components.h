@@ -35,8 +35,10 @@ namespace Milky
 
 		glm::mat4 GetTransform() const
 		{
-			// TODO: Fix rotation
-			return glm::translate(glm::mat4(1.0f), Translation) * glm::scale(glm::mat4(1.0f), Scale);
+			glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), Rotation.x, { 1, 0, 0 })
+				* glm::rotate(glm::mat4(1.0f), Rotation.y, { 0, 1, 0 })
+				* glm::rotate(glm::mat4(1.0f), Rotation.z, { 0, 0, 1 });
+			return glm::translate(glm::mat4(1.0f), Translation) * rotation * glm::scale(glm::mat4(1.0f), Scale);
 		}
 	};
 
