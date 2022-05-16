@@ -16,7 +16,7 @@ namespace Milky {
 		WindowProps(const std::string& title = "Milky Engine",
 						uint32_t width = 1280,
 						uint32_t height = 720, bool defaultMaximized = true)
-			: Title(title), Width(width), Height(height), DefaultMaximized(DefaultMaximized)
+			: Title(title), Width(width), Height(height), DefaultMaximized(defaultMaximized)
 		{}
 	};
 
