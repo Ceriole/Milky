@@ -30,6 +30,7 @@ group "Dependencies"
 	include "Milky/vendor/GLFW"
 	include "Milky/vendor/Glad"
 	include "Milky/vendor/imgui"
+	include "Milky/vendor/yaml-cpp"
 group ""
 
 include "Milky"

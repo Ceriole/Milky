@@ -42,6 +42,10 @@ namespace Milky {
 		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
 		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
 
+#if defined(ML_DEBUG) && defined(ML_IMGUI_NOINI)
+		io.IniFilename = NULL;
+#endif
+
 		ImGui::StyleColorsDark();
 
 		ImGuiStyle& style = ImGui::GetStyle();
@@ -51,7 +55,7 @@ namespace Milky {
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 
-		GuiThemeManager::SetTheme(GuiThemeManager::GuiTheme::Dark);
+		GuiThemeManager::SetTheme(GuiThemeManager::s_DefaultGuiTheme);
 
 		Application& app = Application::Get();
 		GLFWwindow* window = static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow());

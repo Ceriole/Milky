@@ -4,10 +4,19 @@
 
 namespace Milky {
 
+	const struct SceneCameraDefaults
+	{
+		float PerspectiveFOV = glm::radians(45.0f);
+		float PerspectiveNear = 0.01f, PerspectiveFar = 1000.0f;
+		float OrthographicSize = 10.0f;
+		float OrthographicNear = -1.0f, OrthographicFar = 1.0f;
+	} s_CameraDefaults;
+
 	class SceneCamera : public Camera
 	{
 	public:
 		enum class ProjectionType { Perspective = 0, Orthographic = 1, _Count = 2 };
+		
 	public:
 		SceneCamera();
 		virtual ~SceneCamera() = default;
@@ -38,11 +47,11 @@ namespace Milky {
 	private:
 		ProjectionType m_ProjectionType = ProjectionType::Orthographic;
 
-		float m_PerspectiveFOV = glm::radians(45.0f);
-		float m_PerspectiveNear = 0.01f, m_PerspectiveFar = 1000.0f;
+		float m_PerspectiveFOV = s_CameraDefaults.PerspectiveFOV;
+		float m_PerspectiveNear = s_CameraDefaults.PerspectiveNear, m_PerspectiveFar = s_CameraDefaults.PerspectiveFar;
 
-		float m_OrthographicSize = 10.0f;
-		float m_OrthographicNear = -1.0f, m_OrthographicFar = 1.0f; 
+		float m_OrthographicSize = s_CameraDefaults.OrthographicSize;
+		float m_OrthographicNear = s_CameraDefaults.OrthographicNear, m_OrthographicFar = s_CameraDefaults.OrthographicFar;
 
 		float m_AspectRatio = 0.0f;
 	};

@@ -12,7 +12,7 @@ namespace Milky {
 	{
 	public:
 		enum class GuiTheme
-		{ ImGuiDefault = 0, Dark, Light, Orangensaft, _Count };
+		{ ImGui = 0, Dark, Light, Orangensaft, _Count };
 	public:
 		static void ShowThemeMenu();
 		static void LoadFonts();
@@ -23,19 +23,24 @@ namespace Milky {
 		static void SetDarkTheme();
 		static void SetLightTheme();
 		static void SetOrangensaftTheme();
+	public:
+		static const GuiTheme s_DefaultGuiTheme = GuiTheme::Dark;
 	private:
 		static GuiTheme s_GuiTheme;
 	};
 
-	template<typename DrawFunction>
-	bool DrawControl(const std::string& label, DrawFunction drawFunction, float columnWidth = 100.0f);
+	namespace UIControls {
 
-	bool DrawComboControl(const std::string& label, std::vector<std::string> values, int& selected, float columnWidth = 100.0f);
-	bool DrawBoolControl(const std::string& label, bool* value, float columnWidth = 100.0f);
-	
-	bool DrawFloatControl(const std::string& label, float* value, float resetValue = 0.0f, float columnWidth = 100.0f, const char* format = "%.2f");
-	bool DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f, const char* format = "%.2f");
-	
-	bool DrawColorControl(const std::string& label, glm::vec4& color, float columnWidth = 100.0f);
-	
+		template<typename DrawFunction>
+		bool ShowControl(const std::string& label, DrawFunction drawFunction, float columnWidth = 100.0f);
+
+		bool ShowComboControl(const std::string& label, std::vector<std::string> values, int& selected, float columnWidth = 100.0f);
+		bool ShowBoolControl(const std::string& label, bool* value, float columnWidth = 100.0f);
+
+		bool ShowFloatControl(const std::string& label, float* value, float resetValue = 0.0f, float columnWidth = 100.0f, const char* format = "%.2f");
+		bool ShowXYZControl(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f, const char* format = "%.2f");
+
+		bool DrawColorControl(const std::string& label, glm::vec4& color, float columnWidth = 100.0f);
+
+	}
 }

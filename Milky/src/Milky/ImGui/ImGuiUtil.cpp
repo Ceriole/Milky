@@ -9,8 +9,7 @@
 namespace Milky {
 
 	static ImFont* s_ThemeFonts[3];
-
-	GuiThemeManager::GuiTheme GuiThemeManager::s_GuiTheme = GuiTheme::ImGuiDefault;
+	GuiThemeManager::GuiTheme GuiThemeManager::s_GuiTheme = GuiTheme::ImGui;
 
 	void GuiThemeManager::ShowThemeMenu()
 	{
@@ -19,7 +18,6 @@ namespace Milky {
 			for (int i = 0; i < (int)GuiTheme::_Count; i++)
 			{
 				GuiTheme theme = (GuiTheme)i;
-				
 				ImGui::BeginDisabled(theme == GuiTheme::Orangensaft);
 				if (ImGui::MenuItem(GetThemeName(theme).c_str(), NULL, theme == GetTheme()))
 						SetTheme(theme);
@@ -34,8 +32,8 @@ namespace Milky {
 	void GuiThemeManager::LoadFonts()
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		constexpr float fontSize = 18.0f;
 		s_ThemeFonts[0] = io.Fonts->AddFontDefault();
+		constexpr float fontSize = 18.0f;
 		s_ThemeFonts[1] = io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Regular.ttf", fontSize);
 		s_ThemeFonts[2] = io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Bold.ttf", fontSize);
 	}
@@ -49,7 +47,7 @@ namespace Milky {
 		switch(s_GuiTheme)
 		{
 		default:
-		case GuiTheme::ImGuiDefault:
+		case GuiTheme::ImGui:
 			io.FontDefault = s_ThemeFonts[0];
 			ImGui::StyleColorsDark();
 			break;
@@ -67,18 +65,25 @@ namespace Milky {
 
 	std::string GuiThemeManager::GetThemeName(GuiTheme theme)
 	{
+		std::string themeName = "Unknown Theme";
 		switch (theme)
 		{
-		case GuiTheme::ImGuiDefault:
-			return "ImGui Default";
+		case GuiTheme::ImGui:
+			themeName = "ImGui Default";
+			break;
 		case GuiTheme::Dark:
-			return "Dark";
+			themeName = "Dark"; 
+			break;
 		case GuiTheme::Light:
-			return "Light";
+			themeName = "Light";
+			break;
 		case GuiTheme::Orangensaft:
-			return "Orangensaft";
+			themeName = "Orangensaft";
+			break;
 		}
-		return "Unknown Theme";
+		if (theme == s_DefaultGuiTheme)
+			themeName.append(" (Default)");
+		return themeName;
 	}
 
 	void GuiThemeManager::SetDarkTheme()
@@ -157,127 +162,157 @@ namespace Milky {
 		// TODO
 	}
 
-	template<typename DrawFunction>
-	bool DrawControl(const std::string& label, DrawFunction drawFunction, float columnWidth)
-	{
-		ImGui::PushID(label.c_str());
-		ImGui::Columns(2);
-		ImGui::SetColumnWidth(0, columnWidth);
-		ImGui::Text(label.c_str());
-		ImGui::NextColumn();
-		
-		bool edited = drawFunction();
+	namespace UIControls {
 
-		ImGui::Columns(1);
-		ImGui::PopID();
+		template<typename DrawFunction>
+		bool ShowControl(const std::string& label, DrawFunction drawFunction, float columnWidth)
+		{
+			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2{ 0, 0 });
+			ImGui::BeginTable(label.c_str(), 2);
+			ImGui::TableSetupColumn((label + "Label").c_str(), ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_WidthFixed, columnWidth);
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			ImGui::Text(label.c_str());
+			ImGui::TableNextColumn();
 
-		return edited;
-	}
+			bool edited = drawFunction();
 
-	bool DrawColorControl(const std::string& label, glm::vec4& color, float columnWidth)
-	{
-		return DrawControl(label, [&]() -> bool
-			{
-				return ImGui::ColorEdit4("##Color", glm::value_ptr(color));
-			}, columnWidth);
-	}
+			ImGui::EndTable();
+			ImGui::PopStyleVar();
+			return edited;
+		}
 
-	bool DrawBoolControl(const std::string& label, bool* value, float columnWidth)
-	{
-		return DrawControl(label, [&]() -> bool
-			{
-				return ImGui::Checkbox("##Boolean", value);
-			}, columnWidth);
-	}
-
-	bool DrawFloatControl(const std::string& label, float* value, float resetValue, float columnWidth, const char* format)
-	{
-		return DrawControl(label, [&]() -> bool
-			{
-				return ImGui::DragFloat("##Value", value, 0.1f, 0.0f, 0.0f, format);
-			}, columnWidth);
-	}
-
-	bool DrawComboControl(const std::string& label, std::vector<std::string> values, int& selected, float columnWidth)
-	{
-		return DrawControl(label, [&]() -> bool
-			{
-				bool edited = false;
-				if (ImGui::BeginCombo("##Combo", values[selected].c_str()))
+		bool DrawColorControl(const std::string& label, glm::vec4& color, float columnWidth)
+		{
+			return ShowControl(label, [&]() -> bool
 				{
-					for (int i = 0; i < values.size(); i++)
+					return ImGui::ColorEdit4("##Color", glm::value_ptr(color));
+				}, columnWidth);
+		}
+
+		bool ShowBoolControl(const std::string& label, bool* value, float columnWidth)
+		{
+			return ShowControl(label, [&]() -> bool
+				{
+					return ImGui::Checkbox("##Boolean", value);
+				}, columnWidth);
+		}
+
+		bool ShowFloatControl(const std::string& label, float* value, float resetValue, float columnWidth, const char* format)
+		{
+			return ShowControl(label, [&]() -> bool
+				{
+					bool edited = ImGui::DragFloat("##Value", value, 0.1f, 0.0f, 0.0f, format);
+					if (ImGui::BeginPopupContextItem("Reset"))
 					{
-						bool isSelected = selected == i;
-						if (ImGui::Selectable(values[i].c_str(), isSelected))
+						if (ImGui::MenuItem("Reset"))
+						{ *value = resetValue; edited = true; }
+						ImGui::EndPopup();
+					}
+					return edited;
+				}, columnWidth);
+		}
+
+		bool ShowComboControl(const std::string& label, std::vector<std::string> values, int& selected, float columnWidth)
+		{
+			return ShowControl(label, [&]() -> bool
+				{
+					bool edited = false;
+					if (ImGui::BeginCombo("##Combo", values[selected].c_str()))
+					{
+						for (int i = 0; i < values.size(); i++)
 						{
-							selected = i;
-							edited = true;
+							bool isSelected = selected == i;
+							if (ImGui::Selectable(values[i].c_str(), isSelected))
+							{
+								selected = i;
+								edited = true;
+							}
+
+							if (isSelected)
+								ImGui::SetItemDefaultFocus();
 						}
 
-						if (isSelected)
-							ImGui::SetItemDefaultFocus();
+						ImGui::EndCombo();
+					}
+					return edited;
+				}, columnWidth);
+		}
+
+		bool ShowXYZControl(const std::string& label, glm::vec3& values, float resetValue, float columnWidth, const char* format)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			auto boldFont = io.Fonts->Fonts[0];
+
+			return ShowControl(label, [&]() -> bool
+				{
+					bool edited = false;
+
+					ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
+
+					float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+					ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
+					if (ImGui::Button("X", buttonSize))
+					{ values.x = resetValue; edited = true; }
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Reset X");
+					ImGui::OpenPopupContextItem("ResetPopup");
+					ImGui::PopStyleColor(3);
+
+					ImGui::SameLine();
+					edited |= ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, format);
+					ImGui::OpenPopupContextItem("ResetPopup");
+					ImGui::PopItemWidth();
+					ImGui::SameLine();
+
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.3f, 1.0f });
+					if (ImGui::Button("Y", buttonSize))
+					{ values.y = resetValue; edited = true; }
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Reset Y");
+					ImGui::OpenPopupContextItem("ResetPopup");
+					ImGui::PopStyleColor(3);
+
+					ImGui::SameLine();
+					edited |= ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, format);
+					ImGui::OpenPopupContextItem("ResetPopup");
+					ImGui::PopItemWidth();
+					ImGui::SameLine();
+
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
+					if (ImGui::Button("Z", buttonSize))
+					{ values.z = resetValue; edited = true; }
+					if (ImGui::IsItemHovered())
+						ImGui::SetTooltip("Reset Z");
+					ImGui::OpenPopupContextItem("ResetPopup");
+					ImGui::PopStyleColor(3);
+
+					ImGui::SameLine();
+					edited |= ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, format);
+					ImGui::OpenPopupContextItem("ResetPopup");
+					ImGui::PopItemWidth();
+
+					if (ImGui::BeginPopup("ResetPopup"))
+					{
+						if (ImGui::MenuItem("Reset All"))
+						{ values = glm::vec3(resetValue); edited = true; }
+						ImGui::EndPopup();
 					}
 
-					ImGui::EndCombo();
-				}
-				return edited;
-			}, columnWidth);
+					ImGui::PopStyleVar();
+
+					return edited;
+				}, columnWidth);
+		}
+
 	}
-
-	bool DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue, float columnWidth, const char* format)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		auto boldFont = io.Fonts->Fonts[0];
-
-		return DrawControl(label, [&]() -> bool
-			{
-				ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
-				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
-
-				bool edited = false;
-
-				float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-				ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
-
-				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
-				if (ImGui::Button("X", buttonSize))
-				{ values.x = resetValue; edited = true; }
-				ImGui::PopStyleColor(3);
-
-				ImGui::SameLine();
-				edited |= ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, format);
-				ImGui::PopItemWidth();
-				ImGui::SameLine();
-
-				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.3f, 1.0f });
-				if (ImGui::Button("Y", buttonSize))
-				{ values.y = resetValue; edited = true; }
-				ImGui::PopStyleColor(3);
-
-				ImGui::SameLine();
-				edited |= ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, format);
-				ImGui::PopItemWidth();
-				ImGui::SameLine();
-
-				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
-				if (ImGui::Button("Z", buttonSize))
-				{ values.z = resetValue; edited = true; }
-				ImGui::PopStyleColor(3);
-
-				ImGui::SameLine();
-				edited |= ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, format);
-				ImGui::PopItemWidth();
-
-				ImGui::PopStyleVar();
-
-				return edited;
-			}, columnWidth);
-	}
-
 }

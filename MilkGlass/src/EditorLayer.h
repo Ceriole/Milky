@@ -2,7 +2,9 @@
 
 #include <Milky.h>
 
-#include "Panels/SceneHierarchyPanel.h"
+#include "Panels/ScenePanels.h"
+
+#include <imgui/imgui.h>
 
 namespace Milky {
 	class EditorLayer : public Layer
@@ -17,6 +19,11 @@ namespace Milky {
 		virtual void OnImGuiRender() override;
 		virtual void OnEvent(Event& event) override;
 	private:
+		void SetEditorDefaultDockLayout();
+		void ShowEditorMenuBar();
+		void ShowEditorViewport();
+		void ShowEditorSettings(); // TODO: Temporary
+	private:
 		Ref<VertexArray> m_SquareVA;
 		Ref<Shader> m_FlatColorShader;
 		Ref<Framebuffer> m_Framebuffer;
@@ -25,9 +32,12 @@ namespace Milky {
 		Entity m_SquareEntity0, m_SquareEntity1;
 		Entity m_CameraEntity;
 
+		ImGuiID m_DockspaceID = NULL;
+
+		bool m_ShowViewport = true;
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
 
-		SceneHierarchyPanel m_SceneHierarchyPanel;
+		ScenePanels m_ScenePanels;
 	};
 }

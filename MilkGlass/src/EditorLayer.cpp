@@ -1,6 +1,6 @@
 #include "EditorLayer.h"
 
-#include <imgui/imgui.h>
+#include <imgui/imgui_internal.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -107,13 +107,12 @@ namespace Milky {
 
 		m_CameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		m_ScenePanels.SetContext(m_ActiveScene);
 	}
 
 	void EditorLayer::OnDetach()
 	{
 		ML_PROFILE_FUNCTION();
-
 	}
 
 	void EditorLayer::OnUpdate(Timestep ts)
@@ -141,59 +140,74 @@ namespace Milky {
 
 	void EditorLayer::OnImGuiRender()
 	{
-		ML_PROFILE_FUNCTION();
-		static bool dockingEnabled = true;
-		static bool opt_fullscreen = true;
-		static bool opt_padding = false;
+		ML_PROFILE_FUNCTION(); 
 		static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-		// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-		// because it would be confusing to have two docking targets within each others.
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-		if (opt_fullscreen)
-		{
-			const ImGuiViewport* viewport = ImGui::GetMainViewport();
-			ImGui::SetNextWindowPos(viewport->WorkPos);
-			ImGui::SetNextWindowSize(viewport->WorkSize);
-			ImGui::SetNextWindowViewport(viewport->ID);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-			window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-			window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-		}
-		else
-		{
-			dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
-		}
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->WorkPos);
+		ImGui::SetNextWindowSize(viewport->WorkSize);
+		ImGui::SetNextWindowViewport(viewport->ID);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-		// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-		// and handle the pass-thru hole, so we ask Begin() to not render a background.
 		if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
 			window_flags |= ImGuiWindowFlags_NoBackground;
 
-		// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-		// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-		// all active windows docked into it will lose their parent and become undocked.
-		// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-		// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-		if (!opt_padding)
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		ImGui::Begin("Editor DockSpace", &dockingEnabled, window_flags);
-		if (!opt_padding)
-			ImGui::PopStyleVar();
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::Begin("Editor Dockspace", NULL, window_flags);
+		ImGui::PopStyleVar(3);
 
-		if (opt_fullscreen)
-			ImGui::PopStyleVar(2);
-
-		// Submit the DockSpace
 		ImGuiIO& io = ImGui::GetIO();
-		ImGuiID dockspace_id;
-		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-		{
-			dockspace_id = ImGui::GetID("EditorDockSpace");
-			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-		}
+		ImGuiStyle& style = ImGui::GetStyle();
+		float minWinSizeX = style.WindowMinSize.x;
+		style.WindowMinSize.x = 380.0f;
+		m_DockspaceID = ImGui::GetID("EditorDockspace");
+		if (ImGui::DockBuilderGetNode(m_DockspaceID) == NULL)
+			SetEditorDefaultDockLayout();
+		ImGui::DockSpace(m_DockspaceID, ImVec2(0.0f, 0.0f), dockspace_flags);
+		style.WindowMinSize.x = minWinSizeX;
 
+		ShowEditorMenuBar();
+
+		m_ScenePanels.OnImguiRender();
+
+		ShowEditorViewport();
+		ShowEditorSettings();
+
+		ImGui::End();
+	}
+
+	void EditorLayer::OnEvent(Event& event)
+	{}
+
+	void EditorLayer::SetEditorDefaultDockLayout()
+	{
+		m_ScenePanels.SetShown(true);
+		m_ShowViewport = true;
+
+		ImGui::DockBuilderRemoveNode(m_DockspaceID);
+		ImGui::DockBuilderAddNode(m_DockspaceID, ImGuiDockNodeFlags_DockSpace);
+		ImGui::DockBuilderSetNodeSize(m_DockspaceID, ImGui::GetWindowSize());
+
+		ImGuiID dock_main_id = m_DockspaceID;
+		ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.30f, NULL, &dock_main_id);
+		ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.40f, NULL, &dock_main_id);
+
+		ImGuiID dock_id_properties = NULL;
+		ImGuiID dock_id_scene_hierarchy = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Up, 0.60f, NULL, &dock_id_properties);
+
+		ImGui::DockBuilderDockWindow("Scene Hierarchy", dock_id_scene_hierarchy);
+		ImGui::DockBuilderDockWindow("Properties", dock_id_properties);
+		ImGui::DockBuilderDockWindow("Viewport", dock_main_id);
+		ImGui::DockBuilderDockWindow("Settings", dock_id_right);
+		ImGui::DockBuilderFinish(m_DockspaceID);
+	}
+
+	void EditorLayer::ShowEditorMenuBar()
+	{
 		if (ImGui::BeginMenuBar())
 		{
 			if (ImGui::BeginMenu("File"))
@@ -202,74 +216,91 @@ namespace Milky {
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Options"))
+			if (ImGui::BeginMenu("Scene"))
 			{
+				m_ScenePanels.ShowNewEntityMenu();
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Window"))
+			{
+				m_ScenePanels.ShowWindowMenuItems();
+				ImGui::MenuItem("Viewport", NULL, &m_ShowViewport);
+				ImGui::Separator();
+				if (ImGui::MenuItem("Reset Layout"))
+					ImGui::DockBuilderRemoveNode(m_DockspaceID);
+				ImGui::Separator();
 				GuiThemeManager::ShowThemeMenu();
 				ImGui::EndMenu();
 			}
 
 			ImGui::EndMenuBar();
 		}
+	}
 
-		m_SceneHierarchyPanel.OnImguiRender();
-
-		if (ImGui::Begin("Settings"))
-		{
-			auto stats = Renderer2D::GetStats();
-			if (ImGui::TreeNodeEx("Renderer2D Stats", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				if (ImGui::BeginTable("renderer2Dstats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
-				{
-					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBgActive]);
-					ImGui::TableNextRow();
-					ImGui::TableNextColumn();
-					ImGui::Text("Draw Calls");
-					ImGui::TableNextColumn();
-					ImGui::Text("%d", stats.DrawCalls);
-					ImGui::TableNextRow();
-					ImGui::TableNextColumn();
-					ImGui::Text("Quads");
-					ImGui::TableNextColumn();
-					ImGui::Text("%d", stats.QuadCount);
-					ImGui::TableNextRow();
-					ImGui::TableNextColumn();
-					ImGui::Text("Vertices");
-					ImGui::TableNextColumn();
-					ImGui::Text("%d", stats.GetTotalVertexCount());
-					ImGui::TableNextRow();
-					ImGui::TableNextColumn();
-					ImGui::Text("Indices");
-					ImGui::TableNextColumn();
-					ImGui::Text("%d", stats.GetTotalIndexCount());
-					ImGui::EndTable();
-					ImGui::PopStyleColor();
-				}
-				ImGui::TreePop();
-			}
-
-			ImGui::End();
-		} // Settings window end
-
+	void EditorLayer::ShowEditorViewport()
+	{
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-		if (ImGui::Begin("Viewport"))
+		if (m_ShowViewport)
 		{
-			m_ViewportFocused = ImGui::IsWindowFocused();
-			m_ViewportHovered = ImGui::IsWindowHovered();
-			Application::Get().GetImGuiLayer()->SetBlockEvents(!m_ViewportFocused || !m_ViewportHovered);
-			
-			ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-			m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+			if (ImGui::Begin("Viewport", &m_ShowViewport))
+			{
+				m_ViewportFocused = ImGui::IsWindowFocused();
+				m_ViewportHovered = ImGui::IsWindowHovered();
+				Application::Get().GetImGuiLayer()->SetBlockEvents(!m_ViewportFocused || !m_ViewportHovered);
 
-			uint32_t textureId = m_Framebuffer->GetColorAttachmentRendererID();
-			ImGui::Image((void*)(uint64_t)textureId, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+				ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+				m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+
+				uint32_t textureId = m_Framebuffer->GetColorAttachmentRendererID();
+				ImGui::Image((void*)(uint64_t)textureId, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+			}
 			ImGui::End();
 		}
 		ImGui::PopStyleVar();
-
-		ImGui::End();
 	}
 
-	void EditorLayer::OnEvent(Event& event)
-	{}
+	void EditorLayer::ShowEditorSettings()
+	{
+		static bool showSettings = true;
+		if (showSettings)
+		{
+			if (ImGui::Begin("Settings"))
+			{
+				auto stats = Renderer2D::GetStats();
+				if (ImGui::TreeNodeEx("Renderer2D Stats", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					if (ImGui::BeginTable("renderer2Dstats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+					{
+						ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
+						ImGui::TableNextRow();
+						ImGui::TableNextColumn();
+						ImGui::Text("Draw Calls");
+						ImGui::TableNextColumn();
+						ImGui::Text("%d", stats.DrawCalls);
+						ImGui::TableNextRow();
+						ImGui::TableNextColumn();
+						ImGui::Text("Quads");
+						ImGui::TableNextColumn();
+						ImGui::Text("%d", stats.QuadCount);
+						ImGui::TableNextRow();
+						ImGui::TableNextColumn();
+						ImGui::Text("Vertices");
+						ImGui::TableNextColumn();
+						ImGui::Text("%d", stats.GetTotalVertexCount());
+						ImGui::TableNextRow();
+						ImGui::TableNextColumn();
+						ImGui::Text("Indices");
+						ImGui::TableNextColumn();
+						ImGui::Text("%d", stats.GetTotalIndexCount());
+						ImGui::PopStyleColor();
+						ImGui::EndTable();
+					}
+					ImGui::TreePop();
+				}
+			}
+			ImGui::End();
+		}
+	}
 
 }
