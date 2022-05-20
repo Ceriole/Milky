@@ -15,7 +15,7 @@ Clone the repository with `git clone --recursive https://github.com/Ceriole/Milk
 
 <ins>**2. Generating the projects and downloading requirements:**</ins>
 
-Run the [Setup.bat](https://github.com/Ceriole/Milky/blob/main/Scripts/Setup.bat) file found in `Scripts` folder to download all requirements and generate project files for vs2022.
+Run the [Setup.bat](https://github.com/Ceriole/Milky/blob/main/Scripts/Setup.bat) file found in `Scripts` folder to download all requirements and generate project files for vs2022. (Requires [Python 3](https://www.python.org/))
 
 *Run [Win-GenProjects.bat](https://github.com/Ceriole/Milky/blob/main/Scripts/Win-GenProjects.bat) or [Setup.bat](https://github.com/Ceriole/Milky/blob/main/Scripts/Setup.bat) whenever you create or move files and folders!*
 
