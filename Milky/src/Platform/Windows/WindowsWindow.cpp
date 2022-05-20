@@ -50,6 +50,16 @@ namespace Milky {
 		glfwSetWindowTitle(m_Window, title.c_str());
 	}
 
+	bool WindowsWindow::HasFocus()
+	{
+		return m_Data.Focused;
+	}
+
+	void WindowsWindow::RequestFocus()
+	{
+		glfwFocusWindow(m_Window);
+	}
+
 	void WindowsWindow::Init(const WindowProps& props)
 	{
 		ML_PROFILE_FUNCTION();
@@ -105,6 +115,7 @@ namespace Milky {
 
 		glfwSetKeyCallback(m_Window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
 			{
+				
 				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 				switch (action)
 				{
@@ -170,6 +181,12 @@ namespace Milky {
 
 				MouseMovedEvent event((float)x, (float)y);
 				data.EventCallback(event);
+			});
+
+		glfwSetWindowFocusCallback(m_Window, [](GLFWwindow* window, int focused)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+				data.Focused = focused;
 			});
 	}
 

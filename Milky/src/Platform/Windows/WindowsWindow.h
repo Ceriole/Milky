@@ -24,8 +24,11 @@ namespace Milky {
 
 		inline virtual void* GetNativeWindow() const { return m_Window; };
 
-		std::string GetTitle();
-		void SetTitle(std::string title);
+		virtual std::string GetTitle() override;
+		virtual void SetTitle(std::string title) override;
+
+		virtual bool HasFocus() override;
+		virtual void RequestFocus() override;
 	private:
 		virtual void Init(const WindowProps& props);
 		virtual void Shutdown();
@@ -37,7 +40,7 @@ namespace Milky {
 		{
 			std::string Title;
 			uint32_t Width, Height;
-			bool VSync;
+			bool VSync, Focused;
 
 			EventCallbackFn EventCallback;
 		};

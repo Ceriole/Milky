@@ -43,6 +43,9 @@ namespace Milky {
 		virtual std::string GetTitle() = 0;
 		virtual void SetTitle(std::string title) = 0;
 
+		virtual bool HasFocus() = 0;
+		virtual void RequestFocus() = 0;
+
 		static Scope<Window> Create(const WindowProps& props = WindowProps());
 	};
 

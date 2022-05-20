@@ -31,6 +31,7 @@ namespace Milky {
 
 		NewScene();
 #if 0
+		// Generate default scene
 		SetActiveFilepath("assets/scenes/Default.milky");
 
 		m_SquareEntity0 = m_ActiveScene->CreateEntity("Square 0");
@@ -189,9 +190,6 @@ namespace Milky {
 		ImGui::End();
 	}
 
-	void EditorLayer::OnEvent(Event& event)
-	{}
-
 	void EditorLayer::SetEditorDefaultDockLayout()
 	{
 		m_ScenePanels.SetShown(true);
@@ -222,30 +220,11 @@ namespace Milky {
 			if (ImGui::BeginMenu("File"))
 			{
 				if (ImGui::MenuItem("New", "Ctrl+N", false)) NewScene();
-				if (ImGui::MenuItem("Open...", "Ctrl+O", false))
-				{
-					std::string filepath = FileDialogs::Open("Milky Scene (*.milky)\0*.milky\0");
-					if (!filepath.empty())
-						OpenScene(filepath);
-				}
+				if (ImGui::MenuItem("Open...", "Ctrl+O", false)) OpenSceneDialog();
 				if (ImGui::MenuItem("Save", "Ctrl+S", false)) SaveScene();
-				if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S", false))
-				{
-					std::string filepath = FileDialogs::Save("Milky Scene (*.milky)\0*.milky\0");
-					if (!filepath.empty())
-						SaveScene(filepath);
-				}
+				if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S", false)) SaveSceneDialog();
 				ImGui::Separator();
-				if (ImGui::BeginMenu("Recent", !m_RecentPaths.empty()))
-				{
-					for (int i = 0; i < m_RecentPaths.size(); i++)
-					{
-						std::string recentFileTitle = std::to_string(i) + " " + m_RecentPaths.at(i);
-						if (ImGui::MenuItem(recentFileTitle.c_str()))
-							OpenScene(m_RecentPaths.at(i));
-					}
-					ImGui::EndMenu();
-				}
+				ShowRecentFilesMenu();
 				ImGui::Separator();
 				if (ImGui::MenuItem("Exit", "Ctrl+Escape", false)) Application::Get().Close();
 				ImGui::EndMenu();
@@ -306,7 +285,7 @@ namespace Milky {
 				if (ImGui::TreeNodeEx("Renderer2D Stats", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
-					if (ImGui::BeginTable("renderer2Dstats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+					if (ImGui::BeginTable("renderer2DStats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
 					{
 						ImGui::TableNextRow();
 						ImGui::TableNextColumn();
@@ -333,8 +312,38 @@ namespace Milky {
 					ImGui::PopStyleColor();
 					ImGui::TreePop();
 				}
+
+				if (ImGui::TreeNodeEx("Scene Stats", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
+					if (ImGui::BeginTable("sceneStats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+					{
+						ImGui::TableNextRow();
+						ImGui::TableNextColumn();
+						ImGui::Text("Entity Count");
+						ImGui::TableNextColumn();
+						ImGui::Text("%d", m_ActiveScene->GetNumEntites());
+						ImGui::EndTable();
+					}
+					ImGui::PopStyleColor();
+					ImGui::TreePop();
+				}
 			}
 			ImGui::End();
+		}
+	}
+
+	void EditorLayer::ShowRecentFilesMenu()
+	{
+		if (ImGui::BeginMenu("Recent", !m_RecentPaths.empty()))
+		{
+			for (int i = 0; i < m_RecentPaths.size(); i++)
+			{
+				std::string recentFileTitle = std::to_string(i) + " " + m_RecentPaths.at(i);
+				if (ImGui::MenuItem(recentFileTitle.c_str()))
+					OpenScene(m_RecentPaths.at(i));
+			}
+			ImGui::EndMenu();
 		}
 	}
 
@@ -381,6 +390,20 @@ namespace Milky {
 		}
 	}
 
+	void EditorLayer::OpenSceneDialog()
+	{
+		std::string filepath = FileDialogs::Open("Milky Scene (*.milky)\0*.milky\0");
+		if (!filepath.empty())
+			OpenScene(filepath);
+	}
+
+	void EditorLayer::SaveSceneDialog()
+	{
+		std::string filepath = FileDialogs::Save("Milky Scene (*.milky)\0*.milky\0");
+		if (!filepath.empty())
+			SaveScene(filepath);
+	}
+
 	void EditorLayer::SetActiveFilepath(std::string filepath)
 	{
 		if (!m_ActivePath.empty())
@@ -395,6 +418,43 @@ namespace Milky {
 		}
 		else
 			Application::Get().GetWindow().SetTitle("MilkGlass - Unsaved Scene");
+	}
+
+
+	void EditorLayer::OnEvent(Event& event)
+	{
+		EventDispatcher dispatcher(event);
+		dispatcher.Dispatch<KeyPressedEvent>(ML_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
+	}
+
+	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
+	{
+		if (e.GetRepeatCount() > 0)
+			return false;
+
+		const bool shift = Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift);
+		const bool ctrl = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
+
+		if (ctrl)
+		{
+			switch (e.GetKeyCode())
+			{
+			case Key::S:
+				if (shift)
+					SaveSceneDialog();
+				else
+					SaveScene();
+				break;
+			case Key::O:
+				OpenSceneDialog();
+				break;
+			case Key::N:
+				NewScene();
+				break;
+			}
+		}
+
+		return false;
 	}
 
 }

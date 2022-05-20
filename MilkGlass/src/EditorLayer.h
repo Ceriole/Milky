@@ -7,6 +7,7 @@
 #include <imgui/imgui.h>
 
 namespace Milky {
+
 	class EditorLayer : public Layer
 	{
 	public:
@@ -22,12 +23,17 @@ namespace Milky {
 		void NewScene();
 		void OpenScene(std::string filepath);
 		void SaveScene(std::string filepath = std::string());
+		void OpenSceneDialog();
+		void SaveSceneDialog();
 	private:
 		void SetActiveFilepath(std::string filepath);
 		void SetEditorDefaultDockLayout();
 		void ShowEditorMenuBar();
 		void ShowEditorViewport();
 		void ShowEditorSettings(); // TODO: Temporary
+		void ShowRecentFilesMenu();
+
+		bool OnKeyPressed(KeyPressedEvent& e);
 	private:
 		Ref<VertexArray> m_SquareVA;
 		Ref<Shader> m_FlatColorShader;

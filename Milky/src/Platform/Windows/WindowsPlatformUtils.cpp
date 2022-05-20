@@ -26,6 +26,7 @@ namespace Milky {
 		{
 			return ofn.lpstrFile;
 		}
+		Application::Get().GetWindow().RequestFocus();
 		return std::string();
 	}
 
@@ -45,6 +46,7 @@ namespace Milky {
 		{
 			return ofn.lpstrFile;
 		}
+		Application::Get().GetWindow().RequestFocus();
 		return std::string();
 	}
 

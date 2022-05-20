@@ -27,6 +27,8 @@ namespace Milky {
 
 		template<typename Comp>
 		void OnComponentAdded(Entity entity, Comp& component);
+
+		int GetNumEntites();
 	private:
 		entt::registry m_Registry;
 		uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
