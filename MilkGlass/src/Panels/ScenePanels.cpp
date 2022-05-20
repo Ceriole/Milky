@@ -29,8 +29,8 @@ namespace Milky {
 
 	void ScenePanels::ShowWindowMenuItems()
 	{
-		ImGui::MenuItem("Scene Hierarchy", NULL, &m_ShowSceneHierarchyPanel);
-		ImGui::MenuItem("Properties", NULL, &m_ShowPropertiesPanel);
+		ImGui::MenuItem("Scene Hierarchy", "Ctrl+Shift+H", &m_ShowSceneHierarchyPanel);
+		ImGui::MenuItem("Properties", "Ctrl+Shift+P", &m_ShowPropertiesPanel);
 	}
 
 	void ScenePanels::OnImguiRender()

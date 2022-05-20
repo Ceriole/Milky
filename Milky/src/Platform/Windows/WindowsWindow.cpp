@@ -39,6 +39,17 @@ namespace Milky {
 		Shutdown();
 	}
 
+	std::string WindowsWindow::GetTitle()
+	{
+		return m_Data.Title;
+	}
+
+	void WindowsWindow::SetTitle(std::string title)
+	{
+		m_Data.Title = title;
+		glfwSetWindowTitle(m_Window, title.c_str());
+	}
+
 	void WindowsWindow::Init(const WindowProps& props)
 	{
 		ML_PROFILE_FUNCTION();

@@ -18,7 +18,12 @@ namespace Milky {
 		virtual void OnUpdate(Timestep ts) override;
 		virtual void OnImGuiRender() override;
 		virtual void OnEvent(Event& event) override;
+
+		void NewScene();
+		void OpenScene(std::string filepath);
+		void SaveScene(std::string filepath = std::string());
 	private:
+		void SetActiveFilepath(std::string filepath);
 		void SetEditorDefaultDockLayout();
 		void ShowEditorMenuBar();
 		void ShowEditorViewport();
@@ -28,6 +33,8 @@ namespace Milky {
 		Ref<Shader> m_FlatColorShader;
 		Ref<Framebuffer> m_Framebuffer;
 
+		std::vector<std::string> m_RecentPaths;
+		std::string m_ActivePath;
 		Ref<Scene> m_ActiveScene;
 		Entity m_SquareEntity0, m_SquareEntity1;
 		Entity m_CameraEntity;

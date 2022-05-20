@@ -10,11 +10,13 @@ namespace Milky {
 
 	class Scene {
 		friend class Entity;
+		friend class SceneSerializer;
 		friend class ScenePanels;
 	public:
 		Scene();
 		~Scene();
 
+		Entity CreateEmptyEntity();
 		Entity CreateEntity(const std::string& name = std::string());
 		void DestroyEntity(Entity entity);
 
@@ -22,7 +24,7 @@ namespace Milky {
 		void OnViewportResize(uint32_t width, uint32_t height);
 
 		Entity GetPrimaryCameraEntity();
-	private:
+
 		template<typename Comp>
 		void OnComponentAdded(Entity entity, Comp& component);
 	private:

@@ -7,6 +7,10 @@
 
 #include "Milky/ImGui/ImGuiUtil.h"
 
+#include "Milky/Scene/SceneSerializer.h"
+
+#include "Milky/Utils/PlatformUtils.h"
+
 namespace Milky {
 
 	EditorLayer::EditorLayer()
@@ -23,7 +27,11 @@ namespace Milky {
 		framebufferSpec.Height = 720;
 		m_Framebuffer = Framebuffer::Create(framebufferSpec);
 
-		m_ActiveScene = CreateRef<Scene>();
+		m_RecentPaths.reserve(2);
+
+		NewScene();
+#if 0
+		SetActiveFilepath("assets/scenes/Default.milky");
 
 		m_SquareEntity0 = m_ActiveScene->CreateEntity("Square 0");
 		m_SquareEntity0.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
@@ -107,7 +115,8 @@ namespace Milky {
 
 		m_CameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 
-		m_ScenePanels.SetContext(m_ActiveScene);
+		SaveScene();
+#endif
 	}
 
 	void EditorLayer::OnDetach()
@@ -212,7 +221,33 @@ namespace Milky {
 		{
 			if (ImGui::BeginMenu("File"))
 			{
-				if (ImGui::MenuItem("Exit", NULL, false)) Application::Get().Close();
+				if (ImGui::MenuItem("New", "Ctrl+N", false)) NewScene();
+				if (ImGui::MenuItem("Open...", "Ctrl+O", false))
+				{
+					std::string filepath = FileDialogs::Open("Milky Scene (*.milky)\0*.milky\0");
+					if (!filepath.empty())
+						OpenScene(filepath);
+				}
+				if (ImGui::MenuItem("Save", "Ctrl+S", false)) SaveScene();
+				if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S", false))
+				{
+					std::string filepath = FileDialogs::Save("Milky Scene (*.milky)\0*.milky\0");
+					if (!filepath.empty())
+						SaveScene(filepath);
+				}
+				ImGui::Separator();
+				if (ImGui::BeginMenu("Recent", !m_RecentPaths.empty()))
+				{
+					for (int i = 0; i < m_RecentPaths.size(); i++)
+					{
+						std::string recentFileTitle = std::to_string(i) + " " + m_RecentPaths.at(i);
+						if (ImGui::MenuItem(recentFileTitle.c_str()))
+							OpenScene(m_RecentPaths.at(i));
+					}
+					ImGui::EndMenu();
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Exit", "Ctrl+Escape", false)) Application::Get().Close();
 				ImGui::EndMenu();
 			}
 
@@ -225,9 +260,9 @@ namespace Milky {
 			if (ImGui::BeginMenu("Window"))
 			{
 				m_ScenePanels.ShowWindowMenuItems();
-				ImGui::MenuItem("Viewport", NULL, &m_ShowViewport);
+				ImGui::MenuItem("Viewport", "Ctrl+Shift+P", &m_ShowViewport);
 				ImGui::Separator();
-				if (ImGui::MenuItem("Reset Layout"))
+				if (ImGui::MenuItem("Reset Layout", "Ctrl+Shift+R", false))
 					ImGui::DockBuilderRemoveNode(m_DockspaceID);
 				ImGui::Separator();
 				GuiThemeManager::ShowThemeMenu();
@@ -270,9 +305,9 @@ namespace Milky {
 				auto stats = Renderer2D::GetStats();
 				if (ImGui::TreeNodeEx("Renderer2D Stats", ImGuiTreeNodeFlags_DefaultOpen))
 				{
+					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
 					if (ImGui::BeginTable("renderer2Dstats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
 					{
-						ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
 						ImGui::TableNextRow();
 						ImGui::TableNextColumn();
 						ImGui::Text("Draw Calls");
@@ -293,14 +328,73 @@ namespace Milky {
 						ImGui::Text("Indices");
 						ImGui::TableNextColumn();
 						ImGui::Text("%d", stats.GetTotalIndexCount());
-						ImGui::PopStyleColor();
 						ImGui::EndTable();
 					}
+					ImGui::PopStyleColor();
 					ImGui::TreePop();
 				}
 			}
 			ImGui::End();
 		}
+	}
+
+	void EditorLayer::NewScene()
+	{
+		m_ActiveScene = CreateRef<Scene>();
+		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		m_ScenePanels.SetContext(m_ActiveScene);
+		SetActiveFilepath(std::string());
+	}
+
+	void EditorLayer::OpenScene(std::string filepath)
+	{
+		if (!filepath.empty())
+		{
+			Ref<Scene> oldScene = m_ActiveScene;
+			NewScene();
+			SceneSerializer serializer(m_ActiveScene);
+			if (serializer.Deserialize(filepath))
+				SetActiveFilepath(filepath);
+			else
+				m_ActiveScene = oldScene;
+		}
+	}
+
+	void EditorLayer::SaveScene(std::string filepath)
+	{
+		SceneSerializer serializer(m_ActiveScene);
+		if (!filepath.empty())
+		{
+			serializer.Serialize(filepath);
+			SetActiveFilepath(filepath);
+		}
+		else if(!m_ActivePath.empty())
+		{
+			serializer.Serialize(m_ActivePath);
+			SetActiveFilepath(m_ActivePath);
+		}
+		else
+		{
+			std::string newFilepath = FileDialogs::Save("Milky Scene (*.milky)\0*.milky\0");
+			serializer.Serialize(newFilepath);
+			SetActiveFilepath(newFilepath);
+		}
+	}
+
+	void EditorLayer::SetActiveFilepath(std::string filepath)
+	{
+		if (!m_ActivePath.empty())
+		{
+			m_RecentPaths.erase(std::remove(m_RecentPaths.begin(), m_RecentPaths.end(), m_ActivePath), m_RecentPaths.end());
+			m_RecentPaths.insert(m_RecentPaths.begin(), m_ActivePath);
+		}
+		m_ActivePath = filepath;
+		if (!m_ActivePath.empty())
+		{
+			Application::Get().GetWindow().SetTitle("MilkGlass - " + m_ActivePath);
+		}
+		else
+			Application::Get().GetWindow().SetTitle("MilkGlass - Unsaved Scene");
 	}
 
 }
