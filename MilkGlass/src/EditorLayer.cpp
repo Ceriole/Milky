@@ -187,7 +187,6 @@ namespace Milky {
 			
 			// Gizmos
 			Entity selectedEntity = m_ScenePanels.GetSelectedEntity(); // TODO: change
-			ML_CORE_INFO("Selected entity {0}", m_GizmoType >= 0);
 			if (selectedEntity && m_GizmoType >= 0)
 			{
 				ImGuizmo::SetOrthographic(false);
