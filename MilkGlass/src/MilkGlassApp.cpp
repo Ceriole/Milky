@@ -10,6 +10,8 @@
 
 #include "EditorLayer.h"
 
+#define ML_IMGUI_NOINI
+
 namespace Milky {
 
 	class MilkGlass : public Application

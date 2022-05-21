@@ -25,7 +25,7 @@ namespace Milky {
 	public:
 		OrthographicCameraController(float aspectRatio, bool mouse = true, bool rotation = false);
 
-		void OnUpdate(Timestep ts);
+		void OnUpdateRuntime(Timestep ts);
 		void OnEvent(Event& e);
 
 		void OnResize(float width, float height);

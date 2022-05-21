@@ -203,7 +203,7 @@ namespace Milky {
 		}
 	}
 	
-	void WindowsWindow::OnUpdate()
+	void WindowsWindow::OnUpdateRuntime()
 	{
 		ML_PROFILE_FUNCTION();
 

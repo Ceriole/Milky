@@ -23,11 +23,11 @@ void Sandbox2D::OnDetach()
 
 }
 
-void Sandbox2D::OnUpdate(Milky::Timestep ts)
+void Sandbox2D::OnUpdateRuntime(Milky::Timestep ts)
 {
 	ML_PROFILE_FUNCTION();
 
-	m_CameraController.OnUpdate(ts);
+	m_CameraController.OnUpdateRuntime(ts);
 
 	Milky::Renderer2D::ResetStats();
 	{

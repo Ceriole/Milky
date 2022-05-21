@@ -32,7 +32,7 @@ ParticleSystem::ParticleSystem(uint32_t maxParticles)
 	m_ParticlePool.resize(maxParticles);
 }
 
-void ParticleSystem::OnUpdate(Milky::Timestep ts)
+void ParticleSystem::OnUpdateRuntime(Milky::Timestep ts)
 {
 	for (auto& particle : m_ParticlePool)
 	{

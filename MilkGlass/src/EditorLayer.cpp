@@ -1,19 +1,18 @@
 #include "EditorLayer.h"
 
 #include <imgui/imgui_internal.h>
+#include <iconfonts/IconsFontAwesome5.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Milky/ImGui/ImGuiUtil.h"
-
 #include "Milky/Scene/SceneSerializer.h"
-
 #include "Milky/Utils/PlatformUtils.h"
-
 #include "Milky/Math/Math.h"
 
 namespace Milky {
+
 
 	EditorLayer::EditorLayer()
 		: Layer("MilkGlassEditorLayer")
@@ -29,97 +28,7 @@ namespace Milky {
 		framebufferSpec.Height = 720;
 		m_Framebuffer = Framebuffer::Create(framebufferSpec);
 
-		m_RecentPaths.reserve(2);
-
 		NewScene();
-#if 0
-		// Generate default scene
-		SetActiveFilepath("assets/scenes/Default.milky");
-
-		m_SquareEntity0 = m_ActiveScene->CreateEntity("Square 0");
-		m_SquareEntity0.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
-
-		auto& transform0 = m_SquareEntity0.GetComponent<TransformComponent>();
-		transform0.Translation.x = -1.0f;
-
-		m_SquareEntity1 = m_ActiveScene->CreateEntity("Square 1");
-		m_SquareEntity1.AddComponent<SpriteRendererComponent>(glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
-
-		auto& transform1 = m_SquareEntity1.GetComponent<TransformComponent>();
-		transform1.Translation.x = 1.0f;
-
-		m_CameraEntity = m_ActiveScene->CreateEntity("Camera Entity");
-		m_CameraEntity.AddComponent<CameraComponent>();
-
-		class CameraController : public ScriptableEntity
-		{
-		public:
-			void OnCreate() override
-			{}
-
-			void OnDestroy() override
-			{}
-
-			void OnUpdate(Timestep ts) override
-			{
-				if (!(HasComponent<CameraComponent>() && HasComponent<TransformComponent>()))
-					return;
-
-				auto& camera = GetComponent<CameraComponent>();
-
-				if (!camera.Primary)
-					return;
-
-				auto& transform = GetComponent<TransformComponent>();
-				constexpr float speed = 5.0f;
-				constexpr float rotationSpeed = glm::pi<float>() / 2.0f;
-
-				switch (camera.Camera.GetProjectionType())
-				{
-				case SceneCamera::ProjectionType::Orthographic:
-					if (Input::IsKeyPressed(Key::A))
-						transform.Translation.x -= speed * ts;
-					if (Input::IsKeyPressed(Key::D))
-						transform.Translation.x += speed * ts;
-					if (Input::IsKeyPressed(Key::W))
-						transform.Translation.y += speed * ts;
-					if (Input::IsKeyPressed(Key::S))
-						transform.Translation.y -= speed * ts;
-					break;
-				case SceneCamera::ProjectionType::Perspective:
-					if (Input::IsKeyPressed(Key::A))
-					{
-						transform.Translation.x -= speed * glm::cos(transform.Rotation.y) * ts;
-						transform.Translation.z += speed * glm::sin(transform.Rotation.y) * ts;
-					}
-					if (Input::IsKeyPressed(Key::D))
-					{
-						transform.Translation.x += speed * glm::cos(transform.Rotation.y) * ts;
-						transform.Translation.z -= speed * glm::sin(transform.Rotation.y) * ts;
-					}
-					if (Input::IsKeyPressed(Key::W))
-					{
-						transform.Translation.z -= speed * glm::cos(transform.Rotation.y) * ts;
-						transform.Translation.x -= speed * glm::sin(transform.Rotation.y) * ts;
-					}
-					if (Input::IsKeyPressed(Key::S))
-					{
-						transform.Translation.z += speed * glm::cos(transform.Rotation.y) * ts;
-						transform.Translation.x += speed * glm::sin(transform.Rotation.y) * ts;
-					}
-					if (Input::IsKeyPressed(Key::Q))
-						transform.Rotation.y += rotationSpeed * ts;
-					if (Input::IsKeyPressed(Key::E))
-						transform.Rotation.y -= rotationSpeed * ts;
-					break;
-				}
-			}
-		};
-
-		m_CameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-
-		SaveScene();
-#endif
 	}
 
 	void EditorLayer::OnDetach()
@@ -127,16 +36,19 @@ namespace Milky {
 		ML_PROFILE_FUNCTION();
 	}
 
-	void EditorLayer::OnUpdate(Timestep ts)
+	void EditorLayer::OnUpdateRuntime(Timestep ts)
 	{
 		ML_PROFILE_FUNCTION();
 
 		if (Milky::FramebufferSpecification spec = m_Framebuffer->GetSpecification(); m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && (spec.Width != m_ViewportSize.x || spec.Height != m_ViewportSize.y))
 		{
 			m_Framebuffer->Resize((uint32_t) m_ViewportSize.x, (uint32_t) m_ViewportSize.y);
-
+			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
 			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		}
+
+		if(m_ViewportFocused)
+			m_EditorCamera.OnUpdate(ts);
 
 		// Render
 		Renderer2D::ResetStats();
@@ -145,7 +57,7 @@ namespace Milky {
 		RenderCommand::Clear();
 
 		// Update scene
-		m_ActiveScene->OnUpdate(ts);
+		m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera);
 
 		m_Framebuffer->Unbind();
 	}
@@ -208,10 +120,10 @@ namespace Milky {
 		ImGuiID dock_id_properties = NULL;
 		ImGuiID dock_id_scene_hierarchy = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Up, 0.60f, NULL, &dock_id_properties);
 
-		ImGui::DockBuilderDockWindow("Scene Hierarchy", dock_id_scene_hierarchy);
-		ImGui::DockBuilderDockWindow("Properties", dock_id_properties);
-		ImGui::DockBuilderDockWindow("Viewport", dock_main_id);
-		ImGui::DockBuilderDockWindow("Stats", dock_id_right);
+		ImGui::DockBuilderDockWindow(SCENE_HIERARCHY_TAB_TITLE, dock_id_scene_hierarchy);
+		ImGui::DockBuilderDockWindow(PROPERTIES_TAB_TITLE, dock_id_properties);
+		ImGui::DockBuilderDockWindow(VIEWPORT_TAB_TITLE, dock_main_id);
+		ImGui::DockBuilderDockWindow(STATS_TAB_TITLE, dock_id_right);
 		ImGui::DockBuilderFinish(m_DockspaceID);
 	}
 
@@ -221,14 +133,14 @@ namespace Milky {
 		{
 			if (ImGui::BeginMenu("File"))
 			{
-				if (ImGui::MenuItem("New", "Ctrl+N", false)) NewScene();
-				if (ImGui::MenuItem("Open...", "Ctrl+O", false)) OpenSceneDialog();
-				if (ImGui::MenuItem("Save", "Ctrl+S", false)) SaveScene();
-				if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S", false)) SaveSceneDialog();
+				if (ImGui::MenuItemEx("New", ICON_FA_FILE, "Ctrl+N", false)) NewScene();
+				if (ImGui::MenuItemEx("Open...", ICON_FA_FOLDER_OPEN, "Ctrl+O", false)) OpenSceneDialog();
+				if (ImGui::MenuItemEx("Save", ICON_FA_SAVE, "Ctrl+S", false)) SaveScene();
+				if (ImGui::MenuItemEx("Save As...", NULL, "Ctrl+Shift+S", false)) SaveSceneDialog();
 				ImGui::Separator();
 				ShowRecentFilesMenu();
 				ImGui::Separator();
-				if (ImGui::MenuItem("Exit", "Ctrl+Escape", false)) Application::Get().Close();
+				if (ImGui::MenuItemEx("Exit", NULL, "Ctrl+Escape", false)) Application::Get().Close();
 				ImGui::EndMenu();
 			}
 
@@ -241,10 +153,10 @@ namespace Milky {
 			if (ImGui::BeginMenu("Window"))
 			{
 				m_ScenePanels.ShowWindowMenuItems();
-				ImGui::MenuItem("Viewport", "Ctrl+Shift+P", &m_ShowViewport);
-				ImGui::MenuItem("Stats", NULL, &m_ShowStats);
+				if (ImGui::MenuItemEx(VIEWPORT_TITLE, VIEWPORT_ICON, "Ctrl+Shift+V", m_ShowViewport)) m_ShowViewport = !m_ShowViewport;
+				if (ImGui::MenuItemEx(STATS_TITLE, STATS_ICON, NULL, m_ShowStats)) m_ShowStats = !m_ShowStats;
 				ImGui::Separator();
-				if (ImGui::MenuItem("Reset Layout", "Ctrl+Shift+R", false))
+				if (ImGui::MenuItemEx("Reset Layout", ICON_FA_RECYCLE, "Ctrl+Shift+R", false))
 					ImGui::DockBuilderRemoveNode(m_DockspaceID);
 				ImGui::Separator();
 				GuiThemeManager::ShowThemeMenu();
@@ -260,11 +172,11 @@ namespace Milky {
 		if (m_ShowViewport)
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-			if (ImGui::Begin("Viewport", &m_ShowViewport))
+			if (ImGui::Begin(VIEWPORT_TAB_TITLE, &m_ShowViewport))
 			{
 				m_ViewportFocused = ImGui::IsWindowFocused();
 				m_ViewportHovered = ImGui::IsWindowHovered();
-				Application::Get().GetImGuiLayer()->SetBlockEvents(!m_ViewportFocused || !m_ViewportHovered);
+				Application::Get().GetImGuiLayer()->SetBlockEvents(!m_ViewportFocused && !m_ViewportHovered);
 
 				ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 				m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
@@ -275,6 +187,7 @@ namespace Milky {
 			
 			// Gizmos
 			Entity selectedEntity = m_ScenePanels.GetSelectedEntity(); // TODO: change
+			ML_CORE_INFO("Selected entity {0}", m_GizmoType >= 0);
 			if (selectedEntity && m_GizmoType >= 0)
 			{
 				ImGuizmo::SetOrthographic(false);
@@ -285,36 +198,41 @@ namespace Milky {
 				ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
 
 				// Camera
+
+				// Gizmo camera from entity
+				/*
 				auto camEntity = m_ActiveScene->GetPrimaryCameraEntity();
-				if (camEntity)
+
+				const auto& cc = camEntity.GetComponent<CameraComponent>();
+				const glm::mat4& cameraProjection = cc.Camera.GetProjection();
+				glm::mat4 cameraView = glm::inverse(camEntity.GetComponent<TransformComponent>().GetTransform());
+				*/
+
+				const glm::mat4& cameraProjection = m_EditorCamera.GetProjection();
+				glm::mat4 cameraView = m_EditorCamera.GetViewMatrix();
+				
+				// Entity Transform
+				auto & tc = selectedEntity.GetComponent<TransformComponent>();
+
+				glm::mat4 transform = tc.GetTransform();
+				// Snapping
+				bool snap = Input::IsKeyPressed(Key::LeftControl); // TODO: Snap setting? Set snap values in UI
+				float snapValue = 0.5f; // Snap to 0.5m for translation and scale
+				if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
+					snapValue = 45.0f; // Snap to 45 degrees for rotation
+
+				float snapValues[3] = { snapValue, snapValue, snapValue };
+
+				// Manupulate
+				if (ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), (ImGuizmo::OPERATION)m_GizmoType, m_GizmoMode, glm::value_ptr(transform), nullptr, snap ? snapValues : nullptr))
 				{
-					const auto& cc = camEntity.GetComponent<CameraComponent>();
-					const glm::mat4& cameraProjection = cc.Camera.GetProjection();
-					glm::mat4 cameraView = glm::inverse(camEntity.GetComponent<TransformComponent>().GetTransform());
+					glm::vec3 translation, rotation, scale;	
+					Math::DecomposeTransform(transform, translation, rotation, scale);
 
-					// Entity Transform
-					auto& tc = selectedEntity.GetComponent<TransformComponent>();
-					glm::mat4 transform = tc.GetTransform();
-					
-					// Snapping
-					bool snap = Input::IsKeyPressed(Key::LeftControl); // TODO: Snap setting? Set snap values in UI
-					float snapValue = 0.5f; // Snap to 0.5m for translation and scale
-					if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
-						snapValue = 45.0f; // Snap to 45 degrees for rotation
-
-					float snapValues[3] = { snapValue, snapValue, snapValue };
-
-					// Manupulate
-					if (ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), (ImGuizmo::OPERATION)m_GizmoType, m_GizmoMode, glm::value_ptr(transform), nullptr, snap ? snapValues : nullptr))
-					{
-						glm::vec3 translation, rotation, scale;
-						Math::DecomposeTransform(transform, translation, rotation, scale);
-
-						glm::vec3 deltaRotation = rotation - tc.Rotation;
-						tc.Translation = translation;
-						tc.Rotation += deltaRotation;
-						tc.Scale = scale;
-					}
+					glm::vec3 deltaRotation = rotation - tc.Rotation;
+					tc.Translation = translation;
+					tc.Rotation += deltaRotation;
+					tc.Scale = scale;
 				}
 			}
 
@@ -327,7 +245,7 @@ namespace Milky {
 	{
 		if (m_ShowStats)
 		{
-			if (ImGui::Begin("Stats", &m_ShowStats))
+			if (ImGui::Begin(STATS_TAB_TITLE, &m_ShowStats))
 			{
 				auto stats = Renderer2D::GetStats();
 				if (ImGui::TreeNodeEx("Renderer2D", ImGuiTreeNodeFlags_DefaultOpen))
@@ -383,12 +301,11 @@ namespace Milky {
 
 	void EditorLayer::ShowRecentFilesMenu()
 	{
-		if (ImGui::BeginMenu("Open Recent", !m_RecentPaths.empty()))
+		if (ImGui::BeginMenuEx("Open Recent", ICON_FA_FOLDER_OPEN, !m_RecentPaths.empty()))
 		{
 			for (int i = 0; i < m_RecentPaths.size(); i++)
 			{
-				std::string recentFileTitle = std::to_string(i) + " " + m_RecentPaths.at(i);
-				if (ImGui::MenuItem(recentFileTitle.c_str()))
+				if (ImGui::MenuItemEx(m_RecentPaths.at(i).c_str(), std::to_string(i).c_str()))
 					OpenScene(m_RecentPaths.at(i));
 			}
 			ImGui::EndMenu();
@@ -399,6 +316,7 @@ namespace Milky {
 	{
 		m_ActiveScene = CreateRef<Scene>();
 		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		m_EditorCamera = EditorCamera(30.0f, 1.78f, 0.1f, 1000.0f);
 		m_ScenePanels.SetContext(m_ActiveScene);
 		SetActiveFilepath(std::string());
 	}
@@ -469,9 +387,11 @@ namespace Milky {
 	}
 
 
-	void EditorLayer::OnEvent(Event& event)
+	void EditorLayer::OnEvent(Event& e)
 	{
-		EventDispatcher dispatcher(event);
+		m_EditorCamera.OnEvent(e);
+
+		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<KeyPressedEvent>(ML_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
 	}
 
@@ -514,6 +434,12 @@ namespace Milky {
 			break;
 		case Key::R:
 			m_GizmoType = ImGuizmo::OPERATION::SCALE;
+			break;
+		case Key::F3:
+			m_ScenePanels.ShowSceneHierarchyPanel = !m_ScenePanels.ShowSceneHierarchyPanel;
+			break;
+		case Key::F4:
+			m_ScenePanels.ShowPropertiesPanel = !m_ScenePanels.ShowPropertiesPanel;
 			break;
 		}
 

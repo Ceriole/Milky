@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Milky/Core/Timestep.h"
+#include "Milky/Renderer/EditorCamera.h"
 
 #include <entt.hpp>
 
@@ -20,7 +21,8 @@ namespace Milky {
 		Entity CreateEntity(const std::string& name = std::string());
 		void DestroyEntity(Entity entity);
 
-		void OnUpdate(Timestep ts);
+		void OnUpdateRuntime(Timestep ts);
+		void OnUpdateEditor(Timestep ts, EditorCamera& camera);
 		void OnViewportResize(uint32_t width, uint32_t height);
 
 		Entity GetPrimaryCameraEntity();

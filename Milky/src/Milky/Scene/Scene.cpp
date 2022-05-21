@@ -34,7 +34,8 @@ namespace Milky {
 		m_Registry.destroy(entity);
 	}
 
-	void Scene::OnUpdate(Timestep ts)
+
+	void Scene::OnUpdateRuntime(Timestep ts)
 	{
 		// Update entity scripts
 		{
@@ -48,7 +49,7 @@ namespace Milky {
 					nsc.Instance->OnCreate();
 				}
 
-				nsc.Instance->OnUpdate(ts);
+				nsc.Instance->OnUpdateRuntime(ts);
 				// TODO: Destroy scripts in Scene::OnSceneStop
 			});
 		}
@@ -79,6 +80,22 @@ namespace Milky {
 
 			Renderer2D::EndScene();
 		}
+	}
+
+	void Scene::OnUpdateEditor(Timestep ts, EditorCamera& camera)
+	{
+		Renderer2D::BeginScene(camera);
+
+		auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+		int squares = 0;
+		for (auto entity : group)
+		{
+			auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
+
+			Renderer2D::DrawQuad(transform.GetTransform(), sprite.Color);
+		}
+
+		Renderer2D::EndScene();
 	}
 
 	Entity Scene::GetPrimaryCameraEntity()

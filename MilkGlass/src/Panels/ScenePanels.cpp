@@ -14,7 +14,6 @@
 	#define _CRT_SECURE_NO_WARNINGS
 #endif
 
-
 namespace Milky {
 
 	ScenePanels::ScenePanels(const Ref<Scene>& context)
@@ -30,15 +29,15 @@ namespace Milky {
 
 	void ScenePanels::ShowWindowMenuItems()
 	{
-		ImGui::MenuItem("Scene Hierarchy", "Ctrl+Shift+H", &m_ShowSceneHierarchyPanel);
-		ImGui::MenuItem("Properties", "Ctrl+Shift+P", &m_ShowPropertiesPanel);
+		if (ImGui::MenuItemEx(SCENE_HIERARCHY_TITLE, SCENE_HIERARCHY_ICON, "F3", ShowSceneHierarchyPanel)) ShowSceneHierarchyPanel = !ShowSceneHierarchyPanel;
+		if (ImGui::MenuItemEx(PROPERTIES_TITLE, PROPERTIES_ICON, "F4", ShowPropertiesPanel)) ShowPropertiesPanel = !ShowPropertiesPanel;
 	}
 
 	void ScenePanels::OnImguiRender()
 	{
-		if (m_ShowSceneHierarchyPanel)
+		if (ShowSceneHierarchyPanel)
 		{
-			if (ImGui::Begin("Scene Hierarchy", &m_ShowSceneHierarchyPanel))
+			if (ImGui::Begin(SCENE_HIERARCHY_TAB_TITLE, &ShowSceneHierarchyPanel))
 			{
 				m_Context->m_Registry.each([&](auto entityID)
 					{
@@ -58,9 +57,9 @@ namespace Milky {
 			ImGui::End();
 		}
 
-		if (m_ShowPropertiesPanel)
+		if (ShowPropertiesPanel)
 		{
-			if (ImGui::Begin("Properties", &m_ShowPropertiesPanel))
+			if (ImGui::Begin(PROPERTIES_TAB_TITLE, &ShowPropertiesPanel))
 			{
 				if (m_SelectedEntity)
 				{
@@ -239,7 +238,7 @@ namespace Milky {
 			bool open = ImGui::TreeNodeEx((void*)typeid(Comp).hash_code(), treeNodeFlags, name.c_str());
 			ImGui::PopStyleVar();
 			ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
-			if (ImGui::Button("+", ImVec2{ lineHeight, lineHeight }))
+			if (ImGui::Button(ICON_FA_SLIDERS_H, ImVec2{ lineHeight, lineHeight }))
 			{
 				ImGui::OpenPopup("ComponentSettings");
 			}
@@ -265,7 +264,7 @@ namespace Milky {
 
 	void ScenePanels::ShowComponents(Entity entity)
 	{
-		ShowComponent<TransformComponent>("Transform", entity, [](TransformComponent& component)
+		ShowComponent<TransformComponent>(ICON_FA_EXPAND_ARROWS_ALT " Transform", entity, [](TransformComponent& component)
 			{
 				UIControls::ShowXYZControl("Translation", component.Translation);
 				glm::vec3 rotation = glm::degrees(component.Rotation);
@@ -274,7 +273,7 @@ namespace Milky {
 				UIControls::ShowXYZControl("Scale", component.Scale, 1.0f);
 			}, false);
 
-		ShowComponent<CameraComponent>("Camera", entity, [](CameraComponent& component)
+		ShowComponent<CameraComponent>(ICON_FA_VIDEO " Camera", entity, [](CameraComponent& component)
 			{
 				auto& camera = component.Camera;
 
@@ -322,7 +321,7 @@ namespace Milky {
 				}
 			});
 
-		ShowComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component)
+		ShowComponent<SpriteRendererComponent>(ICON_FA_IMAGES " Sprite Renderer", entity, [](SpriteRendererComponent& component)
 			{
 				// TODO: Textures and materials
 				UIControls::ShowColorControl("Color", component.Color);

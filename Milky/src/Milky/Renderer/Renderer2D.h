@@ -4,6 +4,7 @@
 #include "Milky/Renderer/Texture.h"
 #include "Milky/Renderer/SubTexture2D.h"
 #include "Milky/Renderer/Camera.h"
+#include "Milky/Renderer/EditorCamera.h"
 
 namespace Milky {
 
@@ -14,6 +15,7 @@ namespace Milky {
 		static void Shutdown();
 
 		static void BeginScene(const Camera& camera, const glm::mat4& transform);
+		static void BeginScene(const EditorCamera& camera);
 		static void BeginScene(const OrthographicCamera& camera); // TODO: Remove
 		static void EndScene();
 		static void Flush();

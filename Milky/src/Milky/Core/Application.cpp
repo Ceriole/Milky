@@ -85,7 +85,7 @@ namespace Milky {
 				{
 					ML_PROFILE_SCOPE("LayerStack Layer::OnUpdate");
 					for (Layer* layer : m_LayerStack)
-						layer->OnUpdate(timestep);
+						layer->OnUpdateRuntime(timestep);
 				}
 			
 				m_ImGuiLayer->Begin();
@@ -96,7 +96,7 @@ namespace Milky {
 				}
 				m_ImGuiLayer->End();
 			}
-			m_Window->OnUpdate();
+			m_Window->OnUpdateRuntime();
 		}
 	}
 

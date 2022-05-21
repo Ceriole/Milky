@@ -137,9 +137,9 @@ public:
 		textureShader->Set("u_Color", {1,1,1,1});
 	}
 
-	void OnUpdate(Milky::Timestep ts) override
+	void OnUpdateRuntime(Milky::Timestep ts) override
 	{
-		m_CameraController.OnUpdate(ts);
+		m_CameraController.OnUpdateRuntime(ts);
 
 		Milky::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		Milky::RenderCommand::Clear();

@@ -4,6 +4,15 @@
 #include "Milky/Core/Base.h"
 #include "Milky/Scene/Entity.h"
 
+#include <IconsFontAwesome5.h>
+
+#define SCENE_HIERARCHY_TITLE		"Scene Hierarchy"
+#define SCENE_HIERARCHY_ICON		ICON_FA_LIST
+#define SCENE_HIERARCHY_TAB_TITLE	SCENE_HIERARCHY_ICON " " SCENE_HIERARCHY_TITLE
+#define PROPERTIES_TITLE			"Properties"
+#define PROPERTIES_ICON				ICON_FA_WRENCH
+#define PROPERTIES_TAB_TITLE		PROPERTIES_ICON " " PROPERTIES_TITLE
+
 namespace Milky {
 
 	class ScenePanels
@@ -16,8 +25,8 @@ namespace Milky {
 
 		void SetShown(bool shown)
 		{
-			m_ShowSceneHierarchyPanel = shown;
-			m_ShowPropertiesPanel = shown;
+			ShowSceneHierarchyPanel = shown;
+			ShowPropertiesPanel = shown;
 		}
 
 		void OnImguiRender();
@@ -30,9 +39,10 @@ namespace Milky {
 		void ShowEntityHeader(Entity entity, bool& entityDeleted);
 		void ShowEntityNode(Entity entity);
 		void ShowComponents(Entity entity);
+	public:
+		bool ShowSceneHierarchyPanel = true;
+		bool ShowPropertiesPanel = true;
 	private:
-		bool m_ShowSceneHierarchyPanel = true;
-		bool m_ShowPropertiesPanel = true;
 		Ref<Scene> m_Context;
 		Entity m_SelectedEntity;
 	};
