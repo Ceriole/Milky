@@ -48,11 +48,12 @@ namespace Milky {
 
 		ImGuiID m_DockspaceID = NULL;
 
-		bool m_ShowViewport = true;
+		bool m_ShowViewport = true, m_ShowStats = false;
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
 
-		int m_GizmoType = -1, m_GizmoMode = (int)ImGuizmo::MODE::LOCAL;
+		int m_GizmoType = -1;
+		ImGuizmo::MODE m_GizmoMode = ImGuizmo::MODE::LOCAL;
 
 		ScenePanels m_ScenePanels;
 	};

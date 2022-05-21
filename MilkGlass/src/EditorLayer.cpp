@@ -195,7 +195,7 @@ namespace Milky {
 	void EditorLayer::SetEditorDefaultDockLayout()
 	{
 		m_ScenePanels.SetShown(true);
-		m_ShowViewport = true;
+		m_ShowViewport = true, m_ShowStats = false;
 
 		ImGui::DockBuilderRemoveNode(m_DockspaceID);
 		ImGui::DockBuilderAddNode(m_DockspaceID, ImGuiDockNodeFlags_DockSpace);
@@ -211,7 +211,7 @@ namespace Milky {
 		ImGui::DockBuilderDockWindow("Scene Hierarchy", dock_id_scene_hierarchy);
 		ImGui::DockBuilderDockWindow("Properties", dock_id_properties);
 		ImGui::DockBuilderDockWindow("Viewport", dock_main_id);
-		ImGui::DockBuilderDockWindow("Settings", dock_id_right);
+		ImGui::DockBuilderDockWindow("Stats", dock_id_right);
 		ImGui::DockBuilderFinish(m_DockspaceID);
 	}
 
@@ -242,6 +242,7 @@ namespace Milky {
 			{
 				m_ScenePanels.ShowWindowMenuItems();
 				ImGui::MenuItem("Viewport", "Ctrl+Shift+P", &m_ShowViewport);
+				ImGui::MenuItem("Stats", NULL, &m_ShowStats);
 				ImGui::Separator();
 				if (ImGui::MenuItem("Reset Layout", "Ctrl+Shift+R", false))
 					ImGui::DockBuilderRemoveNode(m_DockspaceID);
@@ -271,8 +272,6 @@ namespace Milky {
 				uint32_t textureId = m_Framebuffer->GetColorAttachmentRendererID();
 				ImGui::Image((void*)(uint64_t)textureId, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 			}
-
-			m_GizmoType = ImGuizmo::OPERATION::ROTATE;
 			
 			// Gizmos
 			Entity selectedEntity = m_ScenePanels.GetSelectedEntity(); // TODO: change
@@ -280,6 +279,7 @@ namespace Milky {
 			{
 				ImGuizmo::SetOrthographic(false);
 				ImGuizmo::SetDrawlist();
+				
 				float windowWidth = (float)ImGui::GetWindowWidth();
 				float windowHeight = (float)ImGui::GetWindowHeight();
 				ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
@@ -295,8 +295,17 @@ namespace Milky {
 					// Entity Transform
 					auto& tc = selectedEntity.GetComponent<TransformComponent>();
 					glm::mat4 transform = tc.GetTransform();
-					ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), (ImGuizmo::OPERATION)m_GizmoType, (ImGuizmo::MODE)m_GizmoMode, glm::value_ptr(transform));
-					if (ImGuizmo::IsUsing())
+					
+					// Snapping
+					bool snap = Input::IsKeyPressed(Key::LeftControl); // TODO: Snap setting? Set snap values in UI
+					float snapValue = 0.5f; // Snap to 0.5m for translation and scale
+					if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
+						snapValue = 45.0f; // Snap to 45 degrees for rotation
+
+					float snapValues[3] = { snapValue, snapValue, snapValue };
+
+					// Manupulate
+					if (ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), (ImGuizmo::OPERATION)m_GizmoType, m_GizmoMode, glm::value_ptr(transform), nullptr, snap ? snapValues : nullptr))
 					{
 						glm::vec3 translation, rotation, scale;
 						Math::DecomposeTransform(transform, translation, rotation, scale);
@@ -316,13 +325,12 @@ namespace Milky {
 
 	void EditorLayer::ShowEditorSettings()
 	{
-		static bool showSettings = true;
-		if (showSettings)
+		if (m_ShowStats)
 		{
-			if (ImGui::Begin("Settings"))
+			if (ImGui::Begin("Stats", &m_ShowStats))
 			{
 				auto stats = Renderer2D::GetStats();
-				if (ImGui::TreeNodeEx("Renderer2D Stats", ImGuiTreeNodeFlags_DefaultOpen))
+				if (ImGui::TreeNodeEx("Renderer2D", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
 					if (ImGui::BeginTable("renderer2DStats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
@@ -353,7 +361,7 @@ namespace Milky {
 					ImGui::TreePop();
 				}
 
-				if (ImGui::TreeNodeEx("Scene Stats", ImGuiTreeNodeFlags_DefaultOpen))
+				if (ImGui::TreeNodeEx("Scene", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
 					if (ImGui::BeginTable("sceneStats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
@@ -375,7 +383,7 @@ namespace Milky {
 
 	void EditorLayer::ShowRecentFilesMenu()
 	{
-		if (ImGui::BeginMenu("Recent", !m_RecentPaths.empty()))
+		if (ImGui::BeginMenu("Open Recent", !m_RecentPaths.empty()))
 		{
 			for (int i = 0; i < m_RecentPaths.size(); i++)
 			{
@@ -475,23 +483,38 @@ namespace Milky {
 		const bool shift = Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift);
 		const bool ctrl = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
 
-		if (ctrl)
+
+		switch (e.GetKeyCode())
 		{
-			switch (e.GetKeyCode())
-			{
-			case Key::S:
+			// File
+		case Key::S:
+			if (ctrl)
 				if (shift)
 					SaveSceneDialog();
 				else
 					SaveScene();
-				break;
-			case Key::O:
+			break;
+		case Key::O:
+			if (ctrl)
 				OpenSceneDialog();
-				break;
-			case Key::N:
+			break;
+		case Key::N:
+			if (ctrl)
 				NewScene();
-				break;
-			}
+			break;
+			// Gizmos
+		case Key::Q:
+			m_GizmoType = -1;
+			break;
+		case Key::W:
+			m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
+			break;
+		case Key::E:
+			m_GizmoType = ImGuizmo::OPERATION::ROTATE;
+			break;
+		case Key::R:
+			m_GizmoType = ImGuizmo::OPERATION::SCALE;
+			break;
 		}
 
 		return false;
