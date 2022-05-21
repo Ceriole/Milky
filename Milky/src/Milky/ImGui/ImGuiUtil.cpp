@@ -182,7 +182,7 @@ namespace Milky {
 			return edited;
 		}
 
-		bool DrawColorControl(const std::string& label, glm::vec4& color, float columnWidth)
+		bool ShowColorControl(const std::string& label, glm::vec4& color, float columnWidth)
 		{
 			return ShowControl(label, [&]() -> bool
 				{
@@ -266,7 +266,7 @@ namespace Milky {
 
 					ImGui::SameLine();
 					edited |= ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, format);
-					ImGui::OpenPopupContextItem("ResetPopup");
+					ImGui::OpenPopupContextItem("XEditPopup");
 					ImGui::PopItemWidth();
 					ImGui::SameLine();
 
@@ -282,7 +282,7 @@ namespace Milky {
 
 					ImGui::SameLine();
 					edited |= ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, format);
-					ImGui::OpenPopupContextItem("ResetPopup");
+					ImGui::OpenPopupContextItem("YEditPopup");
 					ImGui::PopItemWidth();
 					ImGui::SameLine();
 
@@ -298,13 +298,32 @@ namespace Milky {
 
 					ImGui::SameLine();
 					edited |= ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, format);
-					ImGui::OpenPopupContextItem("ResetPopup");
+					ImGui::OpenPopupContextItem("ZEditPopup");
 					ImGui::PopItemWidth();
 
 					if (ImGui::BeginPopup("ResetPopup"))
 					{
 						if (ImGui::MenuItem("Reset All"))
 						{ values = glm::vec3(resetValue); edited = true; }
+						ImGui::EndPopup();
+					}
+
+					if (ImGui::BeginPopup("XEditPopup"))
+					{
+						ImGui::SetNextItemWidth(100);
+						edited |= ImGui::InputFloat("##X", &values.x);
+						ImGui::EndPopup();
+					}
+					if (ImGui::BeginPopup("YEditPopup"))
+					{
+						ImGui::SetNextItemWidth(100);
+						edited |= ImGui::InputFloat("##Y", &values.y);
+						ImGui::EndPopup();
+					}
+					if (ImGui::BeginPopup("ZEditPopup"))
+					{
+						ImGui::SetNextItemWidth(100);
+						edited |= ImGui::InputFloat("##Z", &values.z);
 						ImGui::EndPopup();
 					}
 

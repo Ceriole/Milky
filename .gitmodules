@@ -17,3 +17,6 @@
 [submodule "Milky/vendor/yaml-cpp"]
 	path = Milky/vendor/yaml-cpp
 	url = https://github.com/Ceriole/yaml-cpp
+[submodule "Milky/vendor/ImGuizmo"]
+	path = Milky/vendor/ImGuizmo
+	url = https://github.com/Ceriole/ImGuizmo

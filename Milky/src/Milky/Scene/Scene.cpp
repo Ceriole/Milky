@@ -93,7 +93,7 @@ namespace Milky {
 		return {};
 	}
 
-	int Scene::GetNumEntites()
+	size_t Scene::GetNumEntites()
 	{
 		return m_Registry.size();
 	}

@@ -5,6 +5,7 @@
 #include "Panels/ScenePanels.h"
 
 #include <imgui/imgui.h>
+#include <ImGuizmo.h>
 
 namespace Milky {
 
@@ -50,6 +51,8 @@ namespace Milky {
 		bool m_ShowViewport = true;
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
+
+		int m_GizmoType = -1, m_GizmoMode = (int)ImGuizmo::MODE::LOCAL;
 
 		ScenePanels m_ScenePanels;
 	};

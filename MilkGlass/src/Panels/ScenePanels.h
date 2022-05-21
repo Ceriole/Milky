@@ -20,9 +20,11 @@ namespace Milky {
 			m_ShowPropertiesPanel = shown;
 		}
 
-		void ShowWindowMenuItems();
 		void OnImguiRender();
+		void ShowWindowMenuItems();
 		void ShowNewEntityMenu();
+
+		Entity GetSelectedEntity() const { return m_SelectedEntity; };
 	private:
 		void DrawAddComponentMenuItems(Entity entity);
 		void ShowEntityHeader(Entity entity, bool& entityDeleted);

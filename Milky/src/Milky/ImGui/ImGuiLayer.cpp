@@ -8,10 +8,13 @@
 
 #include "Milky/Core/Application.h"
 
+// TEMPORARY
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
 #include "ImGuiUtil.h"
+
+#include <ImGuizmo.h>
 
 namespace Milky {
 
@@ -90,6 +93,7 @@ namespace Milky {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+		ImGuizmo::BeginFrame();
 	}
 
 	void ImGuiLayer::End()

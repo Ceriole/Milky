@@ -40,7 +40,7 @@ namespace Milky {
 		bool ShowFloatControl(const std::string& label, float* value, float resetValue = 0.0f, float columnWidth = 100.0f, const char* format = "%.2f");
 		bool ShowXYZControl(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f, const char* format = "%.2f");
 
-		bool DrawColorControl(const std::string& label, glm::vec4& color, float columnWidth = 100.0f);
+		bool ShowColorControl(const std::string& label, glm::vec4& color, float columnWidth = 100.0f);
 
 	}
 }

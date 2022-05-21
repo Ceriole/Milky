@@ -11,6 +11,8 @@
 
 #include "Milky/Utils/PlatformUtils.h"
 
+#include "Milky/Math/Math.h"
+
 namespace Milky {
 
 	EditorLayer::EditorLayer()
@@ -254,9 +256,9 @@ namespace Milky {
 
 	void EditorLayer::ShowEditorViewport()
 	{
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
 		if (m_ShowViewport)
 		{
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
 			if (ImGui::Begin("Viewport", &m_ShowViewport))
 			{
 				m_ViewportFocused = ImGui::IsWindowFocused();
@@ -269,9 +271,47 @@ namespace Milky {
 				uint32_t textureId = m_Framebuffer->GetColorAttachmentRendererID();
 				ImGui::Image((void*)(uint64_t)textureId, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 			}
+
+			m_GizmoType = ImGuizmo::OPERATION::ROTATE;
+			
+			// Gizmos
+			Entity selectedEntity = m_ScenePanels.GetSelectedEntity(); // TODO: change
+			if (selectedEntity && m_GizmoType >= 0)
+			{
+				ImGuizmo::SetOrthographic(false);
+				ImGuizmo::SetDrawlist();
+				float windowWidth = (float)ImGui::GetWindowWidth();
+				float windowHeight = (float)ImGui::GetWindowHeight();
+				ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+
+				// Camera
+				auto camEntity = m_ActiveScene->GetPrimaryCameraEntity();
+				if (camEntity)
+				{
+					const auto& cc = camEntity.GetComponent<CameraComponent>();
+					const glm::mat4& cameraProjection = cc.Camera.GetProjection();
+					glm::mat4 cameraView = glm::inverse(camEntity.GetComponent<TransformComponent>().GetTransform());
+
+					// Entity Transform
+					auto& tc = selectedEntity.GetComponent<TransformComponent>();
+					glm::mat4 transform = tc.GetTransform();
+					ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), (ImGuizmo::OPERATION)m_GizmoType, (ImGuizmo::MODE)m_GizmoMode, glm::value_ptr(transform));
+					if (ImGuizmo::IsUsing())
+					{
+						glm::vec3 translation, rotation, scale;
+						Math::DecomposeTransform(transform, translation, rotation, scale);
+
+						glm::vec3 deltaRotation = rotation - tc.Rotation;
+						tc.Translation = translation;
+						tc.Rotation += deltaRotation;
+						tc.Scale = scale;
+					}
+				}
+			}
+
 			ImGui::End();
+			ImGui::PopStyleVar();
 		}
-		ImGui::PopStyleVar();
 	}
 
 	void EditorLayer::ShowEditorSettings()

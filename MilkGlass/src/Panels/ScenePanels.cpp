@@ -325,7 +325,7 @@ namespace Milky {
 		ShowComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component)
 			{
 				// TODO: Textures and materials
-				UIControls::DrawColorControl("Color", component.Color);
+				UIControls::ShowColorControl("Color", component.Color);
 			});
 	}
 }
