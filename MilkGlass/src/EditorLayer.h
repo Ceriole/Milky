@@ -40,7 +40,7 @@ namespace Milky {
 		void SetEditorDefaultDockLayout();
 		void ShowEditorMenuBar();
 		void ShowEditorViewport();
-		void ShowEditorSettings(); // TODO: Temporary
+		void ShowEditorStats(); // TODO: Temporary
 		void ShowRecentFilesMenu();
 
 		bool OnKeyPressed(KeyPressedEvent& e);

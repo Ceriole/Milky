@@ -18,6 +18,15 @@
 	#define ML_DEBUGBREAK()
 #endif
 
+#if defined(__GNUC__) || defined(__clang__)
+	#define ML_DEPRECATED __attribute__((deprecated))
+#elif defined(_MSC_VER)
+	#define ML_DEPRECATED __declspec(deprecated)
+#else
+	#pragma message("WARNING: You need to implement ML_DEPRECATED for this compiler")
+	#define ML_DEPRECATED
+#endif
+
 #define ML_EXPAND_MACRO(x) x
 #define ML_STRINGIFY_MACRO(x) #x
 

@@ -1,4 +1,4 @@
-// Basic texture shader
+// Basic 2D texture shader
 
 #type vertex
 #version 450 core
@@ -29,6 +29,7 @@ void main()
 #version 450 core
 
 layout(location = 0) out vec4 o_Color;
+layout(location = 1) out int o_ent;
 
 in vec4 v_Color;
 in vec2 v_TexCoord;
@@ -41,6 +42,7 @@ void main()
 {
 	vec4 texColor = v_Color;
 
+	// This is grody... but we have to do it for compatability
 	switch(int(v_TexIndex))
 	{
 		case  0: texColor *= texture(u_Textures[ 0], v_TexCoord * v_TilingFactor); break;

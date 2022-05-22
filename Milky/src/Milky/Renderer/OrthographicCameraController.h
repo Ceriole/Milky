@@ -19,8 +19,8 @@ namespace Milky {
 		float GetWidth() { return Right - Left; }
 		float GetHeight() { return Top - Bottom; }
 	};
-
-	class OrthographicCameraController
+	
+	class ML_DEPRECATED OrthographicCameraController
 	{
 	public:
 		OrthographicCameraController(float aspectRatio, bool mouse = true, bool rotation = false);

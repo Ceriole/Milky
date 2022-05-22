@@ -23,10 +23,11 @@ namespace Milky {
 	{
 		ML_PROFILE_FUNCTION();
 
-		FramebufferSpecification framebufferSpec;
-		framebufferSpec.Width = 1280;
-		framebufferSpec.Height = 720;
-		m_Framebuffer = Framebuffer::Create(framebufferSpec);
+		FramebufferSpecification fbSpec;
+		fbSpec.Attachments = { FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::Depth };
+		fbSpec.Width = 1280;
+		fbSpec.Height = 720;
+		m_Framebuffer = Framebuffer::Create(fbSpec);
 
 		NewScene();
 	}
@@ -47,8 +48,7 @@ namespace Milky {
 			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		}
 
-		if(m_ViewportFocused)
-			m_EditorCamera.OnUpdate(ts);
+		m_EditorCamera.OnUpdate(ts);
 
 		// Render
 		Renderer2D::ResetStats();
@@ -99,7 +99,7 @@ namespace Milky {
 		m_ScenePanels.OnImguiRender();
 
 		ShowEditorViewport();
-		ShowEditorSettings();
+		ShowEditorStats();
 
 		ImGui::End();
 	}
@@ -240,7 +240,7 @@ namespace Milky {
 		}
 	}
 
-	void EditorLayer::ShowEditorSettings()
+	void EditorLayer::ShowEditorStats()
 	{
 		if (m_ShowStats)
 		{

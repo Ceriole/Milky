@@ -4,14 +4,62 @@
 
 namespace Milky {
 
+	enum class FrameBufferTextureFormat
+	{
+		None = 0,
+
+		// Color
+		RGBA8,
+
+		// Depth/stencil
+		DEPTH24STENCIL8,
+
+		// Defaults
+		Depth = DEPTH24STENCIL8
+	};
+	
+	struct FrameBufferTextureSpecification
+	{
+		FrameBufferTextureSpecification() = default;
+		FrameBufferTextureSpecification(FrameBufferTextureFormat format)
+			: TextureFormat(format)
+		{}
+
+		FrameBufferTextureFormat TextureFormat = FrameBufferTextureFormat::None;
+		// TODO: filtering/wrap
+	};
+
+	struct FrameBufferAttachmentSpecification
+	{
+		FrameBufferAttachmentSpecification() = default;
+		FrameBufferAttachmentSpecification(std::initializer_list<FrameBufferTextureSpecification> attachments)
+			: Attachments(attachments)
+		{}
+
+		std::vector<FrameBufferTextureSpecification> Attachments;
+	};
+
 	struct FramebufferSpecification
 	{
 		uint32_t Width = 0, Height = 0;
-		// FramebufferFormat Format = deez;
+		FrameBufferAttachmentSpecification Attachments;
 		uint32_t Samples = 1;
 
 		bool SwapChainTarget = false;
 	};
+
+	namespace Utils {
+
+		static bool IsDepthFormat(FrameBufferTextureFormat format)
+		{
+			switch (format)
+			{
+			case FrameBufferTextureFormat::DEPTH24STENCIL8: return true;
+			}
+			return false;
+		}
+
+	}
 
 	class Framebuffer
 	{
@@ -23,7 +71,7 @@ namespace Milky {
 
 		virtual void Resize(uint32_t width, uint32_t height) = 0;
 
-		virtual uint32_t GetColorAttachmentRendererID() const = 0;
+		virtual uint32_t GetColorAttachmentRendererID(uint32_t index = 0) const = 0;
 
 		virtual const FramebufferSpecification& GetSpecification() const = 0;
 
