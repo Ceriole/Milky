@@ -1,7 +1,7 @@
 #include "mlpch.h"
 #include "Entity.h"
 
-#include "Components.h"
+#include "Components/ComponentsBasic.h"
 
 namespace Milky {
 

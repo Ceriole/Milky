@@ -1,7 +1,7 @@
 #include "mlpch.h"
 #include "Scene.h"
 
-#include "Components.h"
+#include "Components/Components.h"
 #include "Milky/Renderer/Renderer2D.h"
 
 #include <glm/glm.hpp>

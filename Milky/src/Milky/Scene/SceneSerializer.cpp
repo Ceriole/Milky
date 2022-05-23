@@ -2,7 +2,7 @@
 #include "SceneSerializer.h"
 
 #include "Entity.h"
-#include "Components.h"
+#include "Components/Components.h"
 
 #include <filesystem>
 

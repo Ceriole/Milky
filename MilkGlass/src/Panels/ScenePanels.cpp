@@ -5,7 +5,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
-#include "Milky/Scene/Components.h"
+#include "Milky/Scene/Components/Components.h"
 #include <cstring>
 
 #include "Milky/ImGui/ImGuiUtil.h"

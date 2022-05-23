@@ -8,7 +8,7 @@
 #include "Milky/Renderer/Camera.h"
 #include "Milky/Renderer/EditorCamera.h"
 
-#include "Milky/Scene/Components.h"
+#include "Milky/Scene/Components/ComponentsVisual.h"
 
 namespace Milky {
 

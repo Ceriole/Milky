@@ -19,7 +19,7 @@
 #include "Milky/Scene/Scene.h"
 #include "Milky/Scene/Entity.h"
 #include "Milky/Scene/ScriptableEntity.h"
-#include "Milky/Scene/Components.h"
+#include "Milky/Scene/Components/Components.h"
 // ====================================
 
 // = RENDERER =========================
