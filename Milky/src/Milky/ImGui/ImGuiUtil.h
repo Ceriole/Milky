@@ -6,19 +6,24 @@
 
 #define ML_ENABLE_CUSTOM_FONT 1
 
+struct ImFont;
+
 namespace Milky {
+
+	enum class GuiTheme
+	{ ImGui = 0, Dark, Light, Orangensaft, _Count };
+	enum class GuiFont
+	{ ImGui = 0, Default, Header, Bold };
 
 	class GuiThemeManager
 	{
-	public:
-		enum class GuiTheme
-		{ ImGui = 0, Dark, Light, Orangensaft, _Count };
 	public:
 		static void ShowThemeMenu();
 		static void LoadFonts();
 		static void SetTheme(GuiTheme theme);
 		static GuiTheme GetTheme() { return s_GuiTheme; };
 		static std::string GetThemeName(GuiTheme theme);
+		static ImFont* GetFont(GuiFont font);
 	private:
 		static void SetDarkTheme();
 		static void SetLightTheme();
@@ -27,6 +32,8 @@ namespace Milky {
 		static const GuiTheme s_DefaultGuiTheme = GuiTheme::Dark;
 	private:
 		static GuiTheme s_GuiTheme;
+		static std::unordered_map<GuiFont, ImFont*> s_GuiFonts;
+		static ImFont* s_IconFont;
 	};
 
 	namespace UIControls {

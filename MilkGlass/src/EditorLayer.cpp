@@ -37,6 +37,8 @@ namespace Milky {
 		}
 		else
 			NewScene();
+
+		m_ShowWelcome = true;
 	}
 
 	void EditorLayer::OnDetach()
@@ -126,6 +128,10 @@ namespace Milky {
 		ShowEditorViewport();
 		ShowEditorStats();
 
+		ShowWelcomePopup();
+		ShowHelpPopup();
+		ShowAboutPopup();
+
 		ImGui::End();
 	}
 
@@ -156,37 +162,10 @@ namespace Milky {
 	{
 		if (ImGui::BeginMenuBar())
 		{
-			if (ImGui::BeginMenu("File"))
-			{
-				if (ImGui::MenuItemEx("New", ICON_FA_FILE, "Ctrl+N", false)) NewScene();
-				if (ImGui::MenuItemEx("Open...", ICON_FA_FOLDER_OPEN, "Ctrl+O", false)) OpenSceneDialog();
-				if (ImGui::MenuItemEx("Save", ICON_FA_SAVE, "Ctrl+S", false)) SaveScene();
-				if (ImGui::MenuItemEx("Save As...", NULL, "Ctrl+Shift+S", false)) SaveSceneDialog();
-				ImGui::Separator();
-				ShowRecentFilesMenu();
-				ImGui::Separator();
-				if (ImGui::MenuItemEx("Exit", NULL, "Alt+F4", false)) Application::Get().Close();
-				ImGui::EndMenu();
-			}
-
-			if (ImGui::BeginMenu("Scene"))
-			{
-				m_ScenePanels.ShowNewEntityMenu();
-				ImGui::EndMenu();
-			}
-
-			if (ImGui::BeginMenu("Window"))
-			{
-				m_ScenePanels.ShowWindowMenuItems();
-				if (ImGui::MenuItemEx(VIEWPORT_TITLE, VIEWPORT_ICON, "Ctrl+Shift+V", m_ShowViewport)) m_ShowViewport = !m_ShowViewport;
-				if (ImGui::MenuItemEx(STATS_TITLE, STATS_ICON, NULL, m_ShowStats)) m_ShowStats = !m_ShowStats;
-				ImGui::Separator();
-				if (ImGui::MenuItemEx("Reset Layout", ICON_FA_REDO, "Ctrl+Shift+R", false))
-					ImGui::DockBuilderRemoveNode(m_DockspaceID);
-				ImGui::Separator();
-				GuiThemeManager::ShowThemeMenu();
-				ImGui::EndMenu();
-			}
+			ShowFileMenu();
+			ShowSceneMenu();
+			ShowWindowMenu();
+			ShowHelpMenu();
 
 			ImGui::EndMenuBar();
 		}
@@ -343,6 +322,22 @@ namespace Milky {
 		}
 	}
 
+	void EditorLayer::ShowFileMenu()
+	{
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItemEx("New", ICON_FA_FILE, "Ctrl+N", false)) NewScene();
+			if (ImGui::MenuItemEx("Open...", ICON_FA_FOLDER_OPEN, "Ctrl+O", false)) OpenSceneDialog();
+			if (ImGui::MenuItemEx("Save", ICON_FA_SAVE, "Ctrl+S", false)) SaveScene();
+			if (ImGui::MenuItemEx("Save As...", NULL, "Ctrl+Shift+S", false)) SaveSceneDialog();
+			ImGui::Separator();
+			ShowRecentFilesMenu();
+			ImGui::Separator();
+			if (ImGui::MenuItemEx("Exit", NULL, "Alt+F4", false)) Application::Get().Close();
+			ImGui::EndMenu();
+		}
+	}
+
 	void EditorLayer::ShowRecentFilesMenu()
 	{
 		if (ImGui::BeginMenuEx("Open Recent", ICON_FA_FOLDER_OPEN, !m_RecentPaths.empty()))
@@ -353,6 +348,110 @@ namespace Milky {
 					OpenScene(m_RecentPaths.at(i).string());
 			}
 			ImGui::EndMenu();
+		}
+	}
+
+	void EditorLayer::ShowSceneMenu()
+	{
+		if (ImGui::BeginMenu("Scene"))
+		{
+			m_ScenePanels.ShowNewEntityMenu();
+			ImGui::EndMenu();
+		}
+	}
+
+	void EditorLayer::ShowWindowMenu()
+	{
+		if (ImGui::BeginMenu("Window"))
+		{
+			m_ScenePanels.ShowWindowMenuItems();
+			if (ImGui::MenuItemEx(VIEWPORT_TITLE, VIEWPORT_ICON, "Ctrl+Shift+V", m_ShowViewport)) m_ShowViewport = !m_ShowViewport;
+			if (ImGui::MenuItemEx(STATS_TITLE, STATS_ICON, NULL, m_ShowStats)) m_ShowStats = !m_ShowStats;
+			ImGui::Separator();
+			if (ImGui::MenuItemEx("Reset Layout", ICON_FA_REDO, "Ctrl+Shift+R", false))
+				ImGui::DockBuilderRemoveNode(m_DockspaceID);
+			ImGui::Separator();
+			GuiThemeManager::ShowThemeMenu();
+			ImGui::EndMenu();
+		}
+	}
+
+	void EditorLayer::ShowHelpMenu()
+	{
+		if (ImGui::BeginMenu("Help"))
+		{
+			if (ImGui::MenuItemEx("Welcome", ICON_FA_GLOBE)) m_ShowWelcome = true;
+			if (ImGui::MenuItemEx("Help", ICON_FA_QUESTION)) m_ShowHelp = true;
+			if (ImGui::MenuItemEx("About", ICON_FA_ADDRESS_BOOK)) m_ShowAbout = true;
+			ImGui::EndMenu();
+		}
+	}
+
+	void EditorLayer::ShowWelcomePopup()
+	{
+		if (m_ShowWelcome)
+		{
+			ImGui::OpenPopup("Welcome");
+			ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			if (ImGui::BeginPopupModal("Welcome", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
+			{
+				ImGui::PushFont(GuiThemeManager::GetFont(GuiFont::Header));
+				ImGui::Text("Welcome to Milky!");
+				ImGui::PopFont();
+				ImGui::Separator();
+				ImGui::Text("Milky is an open-source independently written interactive application and rendering engine for Windows.");
+				ImGui::Text("Please report bugs to https://github.com/Ceriole/Milky/issues");
+				if (ImGui::Button("OK")) { ImGui::CloseCurrentPopup(); m_ShowWelcome = false; }
+				ImGui::SetItemDefaultFocus();
+				ImGui::EndPopup();
+			}
+		}
+	}
+
+	void EditorLayer::ShowHelpPopup()
+	{
+		if (m_ShowHelp)
+		{
+			ImGui::OpenPopup("Help");
+			ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			if (ImGui::BeginPopupModal("Help", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
+			{
+				ImGui::Text("TODO"); // TODO: Fill out help text
+				if (ImGui::Button("OK")) { ImGui::CloseCurrentPopup(); m_ShowHelp = false; }
+				ImGui::SetItemDefaultFocus();
+				ImGui::EndPopup();
+			}
+			
+		}
+	}
+
+	void EditorLayer::ShowAboutPopup()
+	{
+		if (m_ShowAbout)
+		{
+			ImGui::OpenPopup("About");
+			ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			if (ImGui::BeginPopupModal("About", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
+			{
+				ImGui::PushFont(GuiThemeManager::GetFont(GuiFont::Header));
+				ImGui::Text("Milky Engine");
+				ImGui::PopFont();
+				ImGui::Separator();
+				ImGui::PushFont(GuiThemeManager::GetFont(GuiFont::Bold));
+				ImGui::Text("Milky Core Team");
+				ImGui::PopFont();
+				ImGui::Separator();
+				ImGui::Text("Ceriole");
+				ImGui::Separator();
+				ImGui::TextDisabled("This engine is still a Work-In-Progress, features and operation are subject to change.");
+				if (ImGui::Button("OK")) { ImGui::CloseCurrentPopup(); m_ShowAbout = false; }
+				ImGui::SetItemDefaultFocus();
+				ImGui::EndPopup();
+			}
+			
 		}
 	}
 

@@ -16,6 +16,9 @@
 #define STATS_ICON			ICON_FA_COG
 #define STATS_TAB_TITLE		ICON_FA_COG " " STATS_TITLE
 
+#define MILKY_SCENE_FILE_EXT		".mlscn"
+#define MILKY_SCENE_FILE_DECRIPTION
+
 namespace Milky {
 
 	class EditorLayer : public Layer
@@ -42,7 +45,16 @@ namespace Milky {
 		void ShowEditorMenuBar();
 		void ShowEditorViewport();
 		void ShowEditorStats(); // TODO: Temporary
+
+		void ShowFileMenu();
 		void ShowRecentFilesMenu();
+		void ShowSceneMenu();
+		void ShowWindowMenu();
+		void ShowHelpMenu();
+
+		void ShowWelcomePopup();
+		void ShowHelpPopup();
+		void ShowAboutPopup();
 
 		bool OnKeyPressed(KeyPressedEvent& e);
 		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
@@ -63,6 +75,7 @@ namespace Milky {
 		ImGuiID m_DockspaceID = NULL;
 
 		bool m_ShowViewport = true, m_ShowStats = true;
+		bool m_ShowWelcome = false, m_ShowHelp = false, m_ShowAbout = false;
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
 		glm::vec2 m_ViewportBounds[2] = { { 0.0f, 0.0f }, { 0.0f, 0.0f } };

@@ -10,10 +10,10 @@
 
 namespace Milky {
 
-	static ImFont* s_ThemeFonts[3];
-	static ImFont* s_IconFont;
+	GuiTheme GuiThemeManager::s_GuiTheme = GuiTheme::ImGui;
+	std::unordered_map<GuiFont, ImFont*> GuiThemeManager::s_GuiFonts;
+	ImFont* GuiThemeManager::s_IconFont;
 
-	GuiThemeManager::GuiTheme GuiThemeManager::s_GuiTheme = GuiTheme::ImGui;
 
 	void GuiThemeManager::ShowThemeMenu()
 	{
@@ -37,21 +37,30 @@ namespace Milky {
 	{
 		ImGuiIO& io = ImGui::GetIO();
 
+		constexpr float imguiFontSize = 13.0f;
 		constexpr float fontSize = 18.0f;
+		constexpr float headerFontSize = 24.0f;
 
 		// FontAwesome5 icons
 		static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
 		ImFontConfig icons_config;
 		icons_config.MergeMode = true; icons_config.PixelSnapH = true;
 		// Default ImGui font
-		s_ThemeFonts[0] = io.Fonts->AddFontDefault();
-		io.Fonts->AddFontFromFileTTF("assets/fonts/fontawesome5/" FONT_ICON_FILE_NAME_FAS, 13.0f, &icons_config, icons_ranges); // Merge icons into defualt
+		s_GuiFonts[GuiFont::ImGui] = io.Fonts->AddFontDefault();
+		io.Fonts->AddFontFromFileTTF("assets/fonts/fontawesome5/" FONT_ICON_FILE_NAME_FAS, imguiFontSize, &icons_config, icons_ranges); // Merge icons into defualt
 		// OpenSans
-		s_ThemeFonts[1] = io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Regular.ttf", fontSize);
+		s_GuiFonts[GuiFont::Default] = io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Regular.ttf", fontSize);
 		io.Fonts->AddFontFromFileTTF("assets/fonts/fontawesome5/" FONT_ICON_FILE_NAME_FAS, fontSize, &icons_config, icons_ranges); // Merge icons into OpenSans regular
-		s_ThemeFonts[2] = io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Bold.ttf", fontSize);
+		s_GuiFonts[GuiFont::Header] = io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Regular.ttf", headerFontSize);
+		io.Fonts->AddFontFromFileTTF("assets/fonts/fontawesome5/" FONT_ICON_FILE_NAME_FAS, headerFontSize, &icons_config, icons_ranges); // Merge icons into OpenSans regular header font
+		s_GuiFonts[GuiFont::Bold] = io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Bold.ttf", fontSize);
 		io.Fonts->AddFontFromFileTTF("assets/fonts/fontawesome5/" FONT_ICON_FILE_NAME_FAS, fontSize, &icons_config, icons_ranges); // Merge icons into OpenSans bold
+		io.Fonts->Build();
+	}
 
+	ImFont* GuiThemeManager::GetFont(GuiFont font)
+	{
+		return s_GuiFonts[font];
 	}
 
 	void GuiThemeManager::SetTheme(GuiTheme theme)
@@ -64,7 +73,7 @@ namespace Milky {
 		{
 		default:
 		case GuiTheme::ImGui:
-			io.FontDefault = s_ThemeFonts[0];
+			io.FontDefault = s_GuiFonts[GuiFont::ImGui];
 			ImGui::StyleColorsDark();
 			break;
 		case GuiTheme::Dark:
@@ -107,7 +116,7 @@ namespace Milky {
 		ImGui::StyleColorsDark();
 
 		auto& io = ImGui::GetIO();
-		io.FontDefault = s_ThemeFonts[1];
+		io.FontDefault = s_GuiFonts[GuiFont::Default];
 
 		auto& colors = ImGui::GetStyle().Colors;
 		colors[ImGuiCol_WindowBg] = ImVec4{ 0.1f, 0.105f, 0.11f, 1.0f };
@@ -145,7 +154,7 @@ namespace Milky {
 		ImGui::StyleColorsLight();
 
 		auto& io = ImGui::GetIO();
-		io.FontDefault = s_ThemeFonts[1];
+		io.FontDefault = s_GuiFonts[GuiFont::Default];
 
 		auto& colors = ImGui::GetStyle().Colors;
 		colors[ImGuiCol_WindowBg] = ImVec4{ 0.972f, 0.984f, 0.984f, 1.0f };
