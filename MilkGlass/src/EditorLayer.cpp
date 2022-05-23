@@ -16,8 +16,7 @@ namespace Milky {
 
 	EditorLayer::EditorLayer()
 		: Layer("MilkGlassEditorLayer")
-	{
-	}
+	{}
 
 	void EditorLayer::OnAttach()
 	{
@@ -455,7 +454,6 @@ namespace Milky {
 		}
 	}
 
-
 	void EditorLayer::CreateEmptyScene()
 	{
 		m_ActiveScene = CreateRef<Scene>();
@@ -479,7 +477,7 @@ namespace Milky {
 	{
 		if (!path.empty())
 		{
-			if (path.extension().string() != ".milky")
+			if (path.extension().string() != MILKY_SCENE_FILE_EXT)
 			{
 				ML_WARN("Could not load '{0}' - Not a scene file.", path.filename().string());
 				return;
@@ -509,7 +507,7 @@ namespace Milky {
 		}
 		else
 		{
-			std::filesystem::path newFilepath = FileDialogs::Save("Milky Scene (*.milky)\0*.milky\0");
+			std::filesystem::path newFilepath = FileDialogs::Save(MILKY_SCENE_FILE_FILTER);
 			serializer.Serialize(newFilepath.string());
 			SetActiveFilepath(newFilepath);
 		}
@@ -517,14 +515,14 @@ namespace Milky {
 
 	void EditorLayer::OpenSceneDialog()
 	{
-		std::filesystem::path filepath = FileDialogs::Open("Milky Scene (*.milky)\0*.milky\0");
+		std::filesystem::path filepath = FileDialogs::Open(MILKY_SCENE_FILE_FILTER);
 		if (!filepath.empty())
 			OpenScene(filepath);
 	}
 
 	void EditorLayer::SaveSceneDialog()
 	{
-		std::string filepath = FileDialogs::Save("Milky Scene (*.milky)\0*.milky\0");
+		std::string filepath = FileDialogs::Save(MILKY_SCENE_FILE_FILTER);
 		if (!filepath.empty())
 			SaveScene(filepath);
 	}
@@ -539,7 +537,6 @@ namespace Milky {
 		m_ActivePath = path.string();
 		Application::Get().GetWindow().SetTitle("MilkGlass - " + (m_ActivePath.empty() ? "Unsaved Scene" : m_ActivePath.string()));
 	}
-
 
 	void EditorLayer::OnEvent(Event& e)
 	{
