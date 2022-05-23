@@ -34,6 +34,7 @@ namespace Milky {
 		void ShowNewEntityMenu();
 
 		Entity GetSelectedEntity() const { return m_SelectedEntity; };
+		void SetSelectedEntity(Entity entity);
 	private:
 		void DrawAddComponentMenuItems(Entity entity);
 		void ShowEntityHeader(Entity entity, bool& entityDeleted);

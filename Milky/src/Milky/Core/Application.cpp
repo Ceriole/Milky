@@ -9,7 +9,8 @@ namespace Milky {
 
 	Application* Application::s_Instance = nullptr;
 
-	Application::Application(const std::string& name)
+	Application::Application(const std::string& name, ApplicationCommandLineArgs args)
+		: m_CommandLineArgs(args)
 	{
 		ML_PROFILE_FUNCTION();
 
@@ -26,9 +27,7 @@ namespace Milky {
 	}
 
 	Application::~Application()
-	{
-
-	}
+	{}
 
 	void Application::PushLayer(Layer* layer)
 	{

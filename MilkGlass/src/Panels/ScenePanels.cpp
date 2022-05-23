@@ -124,6 +124,11 @@ namespace Milky {
 		}
 	}
 
+	void ScenePanels::SetSelectedEntity(Entity entity)
+	{
+		m_SelectedEntity = entity;
+	}
+
 	void ScenePanels::DrawAddComponentMenuItems(Entity entity)
 	{
 		if (ImGui::MenuItem("Camera", NULL, false, !entity.HasComponent<CameraComponent>()))

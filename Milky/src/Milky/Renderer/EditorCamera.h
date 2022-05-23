@@ -34,6 +34,8 @@ namespace Milky {
 
 		float GetPitch() const { return m_Pitch; };
 		float GetYaw() const { return m_Yaw; };
+
+		bool IsUsing() const { return m_Using; };
 	private:
 		void UpdateProjection();
 		void UpdateView();
@@ -49,6 +51,7 @@ namespace Milky {
 		std::pair<float, float> PanSpeed() const;
 		float RotationSpeed() const;
 		float ZoomSpeed() const;
+
 	private:
 		float m_FOV = 45.0f, m_AspectRatio = 1.778f, m_NearClip = 0.1f, m_FarClip = 1000.0f;
 
@@ -57,6 +60,7 @@ namespace Milky {
 		glm::vec3 m_FocalPoint = { 0.0f, 0.0f, 0.0f };
 
 		glm::vec2 m_InitialMousePosition = { 0.0f, 0.0f };
+		bool m_Using = false;
 
 		float m_Distance = 10.0f;
 		float m_Pitch = 0.0f, m_Yaw = 0.0f;

@@ -2,7 +2,7 @@ project "MilkGlass"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++17"
-	staticruntime "on"
+	staticruntime "off"
 
 	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
@@ -12,16 +12,16 @@ project "MilkGlass"
 		"src/**.h",
 		"src/**.cpp"
 	}
+
 	includedirs
 	{
 		"%{wks.location}/Milky/vendor/spdlog/include",
 		"%{wks.location}/Milky/src",
 		"%{wks.location}/Milky/vendor",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.IconFonts}",
 		"%{IncludeDir.entt}",
-		"%{IncludeDir.ImGuizmo}",
-		"%{IncludeDir.IconFonts}"
+		"%{IncludeDir.ImGuizmo}"
 	}
 
 	links
@@ -32,14 +32,15 @@ project "MilkGlass"
 	filter "system:windows"
 		systemversion "latest"
 
-		defines
-		{
-		}
-
 	filter "configurations:Debug"
 		defines "ML_DEBUG"
 		runtime "Debug"
 		symbols "on"
+
+		postbuildcommands
+		{
+			"{COPYDIR} \"%{LibraryDir.VulkanSDK_DebugDLL}\" \"%{cfg.targetdir}\""
+		}
 
 	filter "configurations:Release"
 		defines "ML_RELEASE"

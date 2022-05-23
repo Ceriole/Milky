@@ -31,12 +31,13 @@ namespace Milky {
 		virtual void OnEvent(Event& e) override;
 
 		void NewScene();
-		void OpenScene(std::string filepath);
-		void SaveScene(std::string filepath = std::string());
+		void OpenScene(const std::filesystem::path& path);
+		void SaveScene(const std::filesystem::path& path = std::string());
 		void OpenSceneDialog();
 		void SaveSceneDialog();
 	private:
-		void SetActiveFilepath(std::string filepath);
+		void CreateEmptyScene();
+		void SetActiveFilepath(const std::filesystem::path& path);
 		void SetEditorDefaultDockLayout();
 		void ShowEditorMenuBar();
 		void ShowEditorViewport();
@@ -44,22 +45,27 @@ namespace Milky {
 		void ShowRecentFilesMenu();
 
 		bool OnKeyPressed(KeyPressedEvent& e);
+		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
+
+		bool CanMousePick();
 	private:
 		Ref<VertexArray> m_SquareVA;
 		Ref<Shader> m_FlatColorShader;
 		Ref<Framebuffer> m_Framebuffer;
 
-		std::vector<std::string> m_RecentPaths;
-		std::string m_ActivePath;
+		std::vector<std::filesystem::path> m_RecentPaths;
+		std::filesystem::path m_ActivePath;
 		Ref<Scene> m_ActiveScene;
+		Entity m_HoveredEntity;
 
 		EditorCamera m_EditorCamera;
 
 		ImGuiID m_DockspaceID = NULL;
 
-		bool m_ShowViewport = true, m_ShowStats = false;
+		bool m_ShowViewport = true, m_ShowStats = true;
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
+		glm::vec2 m_ViewportBounds[2] = { { 0.0f, 0.0f }, { 0.0f, 0.0f } };
 
 		int m_GizmoType = -1;
 		ImGuizmo::MODE m_GizmoMode = ImGuizmo::MODE::LOCAL;

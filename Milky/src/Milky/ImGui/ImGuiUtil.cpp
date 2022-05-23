@@ -214,13 +214,15 @@ namespace Milky {
 				}, columnWidth);
 		}
 
-		bool ShowFloatControl(const std::string& label, float* value, float resetValue, float columnWidth, const char* format)
+		bool ShowFloatControl(const std::string& label, float* value, float resetValue, float columnWidth, const char* format, const char* drilldownFormat)
 		{
 			return ShowControl(label, [&]() -> bool
 				{
 					bool edited = ImGui::DragFloat("##Value", value, 0.1f, 0.0f, 0.0f, format);
 					if (ImGui::BeginPopupContextItem("Reset"))
 					{
+						ImGui::SetNextItemWidth(100);
+						edited |= ImGui::InputFloat("##X", value, 0.0f, 0.0f, drilldownFormat);
 						if (ImGui::MenuItem("Reset"))
 						{ *value = resetValue; edited = true; }
 						ImGui::EndPopup();
@@ -255,7 +257,7 @@ namespace Milky {
 				}, columnWidth);
 		}
 
-		bool ShowXYZControl(const std::string& label, glm::vec3& values, float resetValue, float columnWidth, const char* format)
+		bool ShowXYZControl(const std::string& label, glm::vec3& values, float resetValue, float columnWidth, const char* format, const char* drilldownFormat)
 		{
 			ImGuiIO& io = ImGui::GetIO();
 			auto boldFont = io.Fonts->Fonts[0];
@@ -277,7 +279,7 @@ namespace Milky {
 					{ values.x = resetValue; edited = true; }
 					if (ImGui::IsItemHovered())
 						ImGui::SetTooltip("Reset X");
-					ImGui::OpenPopupContextItem("ResetPopup");
+					ImGui::OpenPopupContextItem("XEditPopup");
 					ImGui::PopStyleColor(3);
 
 					ImGui::SameLine();
@@ -293,7 +295,7 @@ namespace Milky {
 					{ values.y = resetValue; edited = true; }
 					if (ImGui::IsItemHovered())
 						ImGui::SetTooltip("Reset Y");
-					ImGui::OpenPopupContextItem("ResetPopup");
+					ImGui::OpenPopupContextItem("YEditPopup");
 					ImGui::PopStyleColor(3);
 
 					ImGui::SameLine();
@@ -309,7 +311,7 @@ namespace Milky {
 					{ values.z = resetValue; edited = true; }
 					if (ImGui::IsItemHovered())
 						ImGui::SetTooltip("Reset Z");
-					ImGui::OpenPopupContextItem("ResetPopup");
+					ImGui::OpenPopupContextItem("ZEditPopup");
 					ImGui::PopStyleColor(3);
 
 					ImGui::SameLine();
@@ -317,29 +319,28 @@ namespace Milky {
 					ImGui::OpenPopupContextItem("ZEditPopup");
 					ImGui::PopItemWidth();
 
-					if (ImGui::BeginPopup("ResetPopup"))
-					{
-						if (ImGui::MenuItem("Reset All"))
-						{ values = glm::vec3(resetValue); edited = true; }
-						ImGui::EndPopup();
-					}
-
 					if (ImGui::BeginPopup("XEditPopup"))
 					{
 						ImGui::SetNextItemWidth(100);
-						edited |= ImGui::InputFloat("##X", &values.x);
+						edited |= ImGui::InputFloat("##X", &values.x, 0.0f, 0.0f, drilldownFormat);
+						if (ImGui::MenuItem("Reset All"))
+						{ values = glm::vec3(resetValue); edited = true; }
 						ImGui::EndPopup();
 					}
 					if (ImGui::BeginPopup("YEditPopup"))
 					{
 						ImGui::SetNextItemWidth(100);
-						edited |= ImGui::InputFloat("##Y", &values.y);
+						edited |= ImGui::InputFloat("##Y", &values.y, 0.0f, 0.0f, drilldownFormat);
+						if (ImGui::MenuItem("Reset All"))
+						{ values = glm::vec3(resetValue); edited = true; }
 						ImGui::EndPopup();
 					}
 					if (ImGui::BeginPopup("ZEditPopup"))
 					{
 						ImGui::SetNextItemWidth(100);
-						edited |= ImGui::InputFloat("##Z", &values.z);
+						edited |= ImGui::InputFloat("##Z", &values.z, 0.0f, 0.0f, drilldownFormat);
+						if (ImGui::MenuItem("Reset All"))
+						{ values = glm::vec3(resetValue); edited = true; }
 						ImGui::EndPopup();
 					}
 

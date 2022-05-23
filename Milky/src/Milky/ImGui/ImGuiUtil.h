@@ -37,8 +37,8 @@ namespace Milky {
 		bool ShowComboControl(const std::string& label, std::vector<std::string> values, int& selected, float columnWidth = 100.0f);
 		bool ShowBoolControl(const std::string& label, bool* value, float columnWidth = 100.0f);
 
-		bool ShowFloatControl(const std::string& label, float* value, float resetValue = 0.0f, float columnWidth = 100.0f, const char* format = "%.2f");
-		bool ShowXYZControl(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f, const char* format = "%.2f");
+		bool ShowFloatControl(const std::string& label, float* value, float resetValue = 0.0f, float columnWidth = 100.0f, const char* format = "%.2f", const char* drilldownFormat = "%.6f");
+		bool ShowXYZControl(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f, const char* format = "%.2f", const char* drilldownFormat = "%.6f");
 
 		bool ShowColorControl(const std::string& label, glm::vec4& color, float columnWidth = 100.0f);
 

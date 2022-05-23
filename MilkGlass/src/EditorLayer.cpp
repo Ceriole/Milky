@@ -24,12 +24,19 @@ namespace Milky {
 		ML_PROFILE_FUNCTION();
 
 		FramebufferSpecification fbSpec;
-		fbSpec.Attachments = { FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::Depth };
+		fbSpec.Attachments = { FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::RED_INTEGER, FrameBufferTextureFormat::Depth };
 		fbSpec.Width = 1280;
 		fbSpec.Height = 720;
 		m_Framebuffer = Framebuffer::Create(fbSpec);
 
-		NewScene();
+		auto commandLineArgs = Application::Get().GetCommandLineArgs();
+		if (commandLineArgs.Count > 1)
+		{
+			auto sceneFilePath = commandLineArgs[1];
+			OpenScene(sceneFilePath);
+		}
+		else
+			NewScene();
 	}
 
 	void EditorLayer::OnDetach()
@@ -56,8 +63,26 @@ namespace Milky {
 		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		RenderCommand::Clear();
 
+		// Clear entity ID attachment to -1
+		m_Framebuffer->ClearAttachment(1, -1);
 		// Update scene
 		m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera);
+
+		auto[mx, my] = ImGui::GetMousePos();
+		mx -= m_ViewportBounds[0].x;
+		my -= m_ViewportBounds[0].y;
+		glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
+		my = viewportSize.y - my;
+		int mouseX = (int)mx;
+		int mouseY = (int)my;
+
+		if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
+		{
+			int pixelData = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
+			m_HoveredEntity = pixelData == -1 ? Entity{} : Entity{ (entt::entity)pixelData, m_ActiveScene.get() };
+		}
+		else
+			m_HoveredEntity = Entity{};
 
 		m_Framebuffer->Unbind();
 	}
@@ -107,7 +132,7 @@ namespace Milky {
 	void EditorLayer::SetEditorDefaultDockLayout()
 	{
 		m_ScenePanels.SetShown(true);
-		m_ShowViewport = true, m_ShowStats = false;
+		m_ShowViewport = true, m_ShowStats = true;
 
 		ImGui::DockBuilderRemoveNode(m_DockspaceID);
 		ImGui::DockBuilderAddNode(m_DockspaceID, ImGuiDockNodeFlags_DockSpace);
@@ -140,7 +165,7 @@ namespace Milky {
 				ImGui::Separator();
 				ShowRecentFilesMenu();
 				ImGui::Separator();
-				if (ImGui::MenuItemEx("Exit", NULL, "Ctrl+Escape", false)) Application::Get().Close();
+				if (ImGui::MenuItemEx("Exit", NULL, "Alt+F4", false)) Application::Get().Close();
 				ImGui::EndMenu();
 			}
 
@@ -156,7 +181,7 @@ namespace Milky {
 				if (ImGui::MenuItemEx(VIEWPORT_TITLE, VIEWPORT_ICON, "Ctrl+Shift+V", m_ShowViewport)) m_ShowViewport = !m_ShowViewport;
 				if (ImGui::MenuItemEx(STATS_TITLE, STATS_ICON, NULL, m_ShowStats)) m_ShowStats = !m_ShowStats;
 				ImGui::Separator();
-				if (ImGui::MenuItemEx("Reset Layout", ICON_FA_RECYCLE, "Ctrl+Shift+R", false))
+				if (ImGui::MenuItemEx("Reset Layout", ICON_FA_REDO, "Ctrl+Shift+R", false))
 					ImGui::DockBuilderRemoveNode(m_DockspaceID);
 				ImGui::Separator();
 				GuiThemeManager::ShowThemeMenu();
@@ -174,15 +199,19 @@ namespace Milky {
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
 			if (ImGui::Begin(VIEWPORT_TAB_TITLE, &m_ShowViewport))
 			{
+				auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
+				auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+				auto viewportOffset = ImGui::GetWindowPos(); // Where ImGui will start rendering for the viewport.
+				m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+				m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
+				m_ViewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
+
 				m_ViewportFocused = ImGui::IsWindowFocused();
 				m_ViewportHovered = ImGui::IsWindowHovered();
 				Application::Get().GetImGuiLayer()->SetBlockEvents(!m_ViewportFocused && !m_ViewportHovered);
 
-				ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-				m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
-
 				uint32_t textureId = m_Framebuffer->GetColorAttachmentRendererID();
-				ImGui::Image((void*)(uint64_t)textureId, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+				ImGui::Image((void*)(uint64_t)textureId, ImGui::GetContentRegionAvail(), ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 			}
 			
 			// Gizmos
@@ -192,16 +221,13 @@ namespace Milky {
 				ImGuizmo::SetOrthographic(false);
 				ImGuizmo::SetDrawlist();
 				
-				float windowWidth = (float)ImGui::GetWindowWidth();
-				float windowHeight = (float)ImGui::GetWindowHeight();
-				ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+				ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportSize.x, m_ViewportSize.y);
 
 				// Camera
 
-				// Gizmo camera from entity
 				/*
+				// Gizmo camera from entity
 				auto camEntity = m_ActiveScene->GetPrimaryCameraEntity();
-
 				const auto& cc = camEntity.GetComponent<CameraComponent>();
 				const glm::mat4& cameraProjection = cc.Camera.GetProjection();
 				glm::mat4 cameraView = glm::inverse(camEntity.GetComponent<TransformComponent>().GetTransform());
@@ -278,16 +304,35 @@ namespace Milky {
 					ImGui::TreePop();
 				}
 
-				if (ImGui::TreeNodeEx("Scene", ImGuiTreeNodeFlags_DefaultOpen))
+				if (ImGui::TreeNodeEx("Editor", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
-					if (ImGui::BeginTable("sceneStats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+					if (ImGui::BeginTable("editorStats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
 					{
 						ImGui::TableNextRow();
 						ImGui::TableNextColumn();
 						ImGui::Text("Entity Count");
 						ImGui::TableNextColumn();
 						ImGui::Text("%d", m_ActiveScene->GetNumEntites());
+
+						ImGui::TableNextRow();
+						ImGui::TableNextColumn();
+						ImGui::Text("Selected Entity");
+						ImGui::TableNextColumn();
+
+						if (m_ScenePanels.GetSelectedEntity())
+							ImGui::Text(m_ScenePanels.GetSelectedEntity().GetTag().c_str());
+						else
+							ImGui::TextDisabled("None");
+
+						ImGui::TableNextRow();
+						ImGui::TableNextColumn();
+						ImGui::Text("Hovered Entity");
+						ImGui::TableNextColumn();
+						if (m_HoveredEntity)
+							ImGui::Text(m_HoveredEntity.GetTag().c_str());
+						else
+							ImGui::TextDisabled("None");
 						ImGui::EndTable();
 					}
 					ImGui::PopStyleColor();
@@ -304,60 +349,76 @@ namespace Milky {
 		{
 			for (int i = 0; i < m_RecentPaths.size(); i++)
 			{
-				if (ImGui::MenuItemEx(m_RecentPaths.at(i).c_str(), std::to_string(i).c_str()))
-					OpenScene(m_RecentPaths.at(i));
+				if (ImGui::MenuItemEx(m_RecentPaths.at(i).string().c_str(), std::to_string(i).c_str()))
+					OpenScene(m_RecentPaths.at(i).string());
 			}
 			ImGui::EndMenu();
 		}
 	}
 
-	void EditorLayer::NewScene()
+
+	void EditorLayer::CreateEmptyScene()
 	{
 		m_ActiveScene = CreateRef<Scene>();
-		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		m_EditorCamera = EditorCamera(30.0f, 1.78f, 0.1f, 1000.0f);
 		m_ScenePanels.SetContext(m_ActiveScene);
-		SetActiveFilepath(std::string());
+
+		if (m_ViewportSize.x > 0 && m_ViewportSize.y > 0)
+		{
+			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+		}
 	}
 
-	void EditorLayer::OpenScene(std::string filepath)
+	void EditorLayer::NewScene()
 	{
-		if (!filepath.empty())
+		CreateEmptyScene();
+		SetActiveFilepath("");
+	}
+
+	void EditorLayer::OpenScene(const std::filesystem::path& path)
+	{
+		if (!path.empty())
 		{
+			if (path.extension().string() != ".milky")
+			{
+				ML_WARN("Could not load '{0}' - Not a scene file.", path.filename().string());
+				return;
+			}
 			Ref<Scene> oldScene = m_ActiveScene;
-			NewScene();
+			CreateEmptyScene();
 			SceneSerializer serializer(m_ActiveScene);
-			if (serializer.Deserialize(filepath))
-				SetActiveFilepath(filepath);
+			if (serializer.Deserialize(path.string()))
+				SetActiveFilepath(path);
 			else
 				m_ActiveScene = oldScene;
 		}
 	}
 
-	void EditorLayer::SaveScene(std::string filepath)
+	void EditorLayer::SaveScene(const std::filesystem::path& path)
 	{
 		SceneSerializer serializer(m_ActiveScene);
-		if (!filepath.empty())
+		if (!path.empty())
 		{
-			serializer.Serialize(filepath);
-			SetActiveFilepath(filepath);
+			serializer.Serialize(path.string());
+			SetActiveFilepath(path);
 		}
 		else if(!m_ActivePath.empty())
 		{
-			serializer.Serialize(m_ActivePath);
+			serializer.Serialize(m_ActivePath.string());
 			SetActiveFilepath(m_ActivePath);
 		}
 		else
 		{
-			std::string newFilepath = FileDialogs::Save("Milky Scene (*.milky)\0*.milky\0");
-			serializer.Serialize(newFilepath);
+			std::filesystem::path newFilepath = FileDialogs::Save("Milky Scene (*.milky)\0*.milky\0");
+			serializer.Serialize(newFilepath.string());
 			SetActiveFilepath(newFilepath);
 		}
 	}
 
 	void EditorLayer::OpenSceneDialog()
 	{
-		std::string filepath = FileDialogs::Open("Milky Scene (*.milky)\0*.milky\0");
+		std::filesystem::path filepath = FileDialogs::Open("Milky Scene (*.milky)\0*.milky\0");
 		if (!filepath.empty())
 			OpenScene(filepath);
 	}
@@ -369,20 +430,15 @@ namespace Milky {
 			SaveScene(filepath);
 	}
 
-	void EditorLayer::SetActiveFilepath(std::string filepath)
+	void EditorLayer::SetActiveFilepath(const std::filesystem::path& path)
 	{
 		if (!m_ActivePath.empty())
 		{
 			m_RecentPaths.erase(std::remove(m_RecentPaths.begin(), m_RecentPaths.end(), m_ActivePath), m_RecentPaths.end());
-			m_RecentPaths.insert(m_RecentPaths.begin(), m_ActivePath);
+			m_RecentPaths.insert(m_RecentPaths.begin(), m_ActivePath.string());
 		}
-		m_ActivePath = filepath;
-		if (!m_ActivePath.empty())
-		{
-			Application::Get().GetWindow().SetTitle("MilkGlass - " + m_ActivePath);
-		}
-		else
-			Application::Get().GetWindow().SetTitle("MilkGlass - Unsaved Scene");
+		m_ActivePath = path.string();
+		Application::Get().GetWindow().SetTitle("MilkGlass - " + (m_ActivePath.empty() ? "Unsaved Scene" : m_ActivePath.string()));
 	}
 
 
@@ -392,6 +448,7 @@ namespace Milky {
 
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<KeyPressedEvent>(ML_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
+		dispatcher.Dispatch<MouseButtonPressedEvent>(ML_BIND_EVENT_FN(EditorLayer::OnMouseButtonPressed));
 	}
 
 	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
@@ -399,9 +456,9 @@ namespace Milky {
 		if (e.GetRepeatCount() > 0)
 			return false;
 
-		const bool shift = Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift);
 		const bool ctrl = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
-
+		const bool shift = Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift);
+		const bool alt = Input::IsKeyPressed(Key::LeftAlt) || Input::IsKeyPressed(Key::RightAlt);
 
 		switch (e.GetKeyCode())
 		{
@@ -438,11 +495,29 @@ namespace Milky {
 			m_ScenePanels.ShowSceneHierarchyPanel = !m_ScenePanels.ShowSceneHierarchyPanel;
 			break;
 		case Key::F4:
-			m_ScenePanels.ShowPropertiesPanel = !m_ScenePanels.ShowPropertiesPanel;
+			if (alt)
+				Application::Get().Close();
+			else
+				m_ScenePanels.ShowPropertiesPanel = !m_ScenePanels.ShowPropertiesPanel;
 			break;
 		}
 
 		return false;
+	}
+
+	bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
+	{
+		if (e.GetMouseButton() == Mouse::ButtonLeft)
+		{
+			if(CanMousePick())
+				m_ScenePanels.SetSelectedEntity(m_HoveredEntity);
+		}
+		return false;
+	}
+
+	bool EditorLayer::CanMousePick()
+	{
+		return m_ViewportHovered && !ImGuizmo::IsOver() && !m_EditorCamera.IsUsing();
 	}
 
 }

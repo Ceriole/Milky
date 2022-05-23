@@ -6,33 +6,119 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
-#include <regex>
+#include <shaderc/shaderc.hpp>
+#include <spirv_cross/spirv_cross.hpp>
+#include <spirv_cross/spirv_glsl.hpp>
+
+#include "Milky/Core/Timer.h"
 
 namespace Milky {
 
-	const std::string typeToken = "#type";
-	const std::regex typeTokenRegex = std::regex("(?:"+typeToken+")\\s+(\\w+)\\s*\\n", std::regex_constants::icase);
-	const size_t typeTokenLength = std::size(typeToken) - 1;
+	namespace Utils {
+		
+		static GLenum ShaderTypeFromString(const std::string& type)
+		{
+			if (type == "vertex")
+				return GL_VERTEX_SHADER;
+			if (type == "fragment" || type == "pixel")
+				return GL_FRAGMENT_SHADER;
 
-	static GLenum ShaderTypeFromString(const std::string& type)
-	{
-		if (type == "vertex")
-			return GL_VERTEX_SHADER;
-		if (type == "fragment" || type == "pixel")
-			return GL_FRAGMENT_SHADER;
+			ML_CORE_ASSERT(false, "Unkown shader type: '" + type + "'");
+			return GL_NONE;
+		}
 
-		ML_CORE_ASSERT(false, "Unkown shader type: '" + type + "'");
-		return GL_NONE;
+		static shaderc_shader_kind GLShaderStageToShaderC(GLenum stage)
+		{
+			switch (stage)
+			{
+			case GL_VERTEX_SHADER:   return shaderc_glsl_vertex_shader;
+			case GL_FRAGMENT_SHADER: return shaderc_glsl_fragment_shader;
+			}
+			ML_CORE_ASSERT(false, "Unkown shader enum: " + stage);
+			return (shaderc_shader_kind)0;
+		}
+
+		static const char* GLShaderStageToString(GLenum stage)
+		{
+			switch (stage)
+			{
+			case GL_VERTEX_SHADER:   return "GL_VERTEX_SHADER";
+			case GL_FRAGMENT_SHADER: return "GL_FRAGMENT_SHADER";
+			}
+			ML_CORE_ASSERT(false, "Unkown shader enum: " + stage);
+			return nullptr;
+		}
+
+		static const char* GetCacheDirectory()
+		{
+			// TODO: make sure the assets directory is valid
+			return "assets/cache/shader/opengl";
+		}
+
+		static void CreateCacheDirectoryIfNeeded()
+		{
+			std::string cacheDirectory = GetCacheDirectory();
+			if (!std::filesystem::exists(cacheDirectory))
+				std::filesystem::create_directories(cacheDirectory);
+		}
+
+		static const char* GLShaderStageCachedOpenGLFileExtension(uint32_t stage)
+		{
+			switch (stage)
+			{
+			case GL_VERTEX_SHADER:    return ".cached_opengl.vert";
+			case GL_FRAGMENT_SHADER:  return ".cached_opengl.frag";
+			}
+			ML_CORE_ASSERT(false, "Unkown shader stage: " + stage);
+			return "";
+		}
+
+		static const char* GLShaderStageCachedVulkanFileExtension(uint32_t stage)
+		{
+			switch (stage)
+			{
+			case GL_VERTEX_SHADER:    return ".cached_vulkan.vert";
+			case GL_FRAGMENT_SHADER:  return ".cached_vulkan.frag";
+			}
+			ML_CORE_ASSERT(false, "Unkown shader stage: " + stage);
+			return "";
+		}
+
+		static const char* GLShaderCachedOpenGLAMDFileExtension()
+		{
+			return ".cached_opengl.amd";
+		}
+
+		static const bool IsAMDGpu()
+		{
+			const char* vendor = (char*)glGetString(GL_VENDOR);
+			return strstr(vendor, "ATI") != nullptr;
+		}
+
 	}
-	
+
 	OpenGLShader::OpenGLShader(const std::string& filepath)
+		: m_FilePath(filepath)
 	{
 		ML_PROFILE_FUNCTION();
 
-		std::string shaderSrc = ReadFile(filepath);
-		ML_CORE_ASSERT(shaderSrc.size(), "Could not load shader file, or file is empty!");
-		std::unordered_map<GLenum, std::string> sources = PreProcess(shaderSrc);
-		Compile(sources);
+		Utils::CreateCacheDirectoryIfNeeded();
+
+		std::string source = ReadFile(filepath);
+		ML_CORE_ASSERT(source.size(), "Could not load shader file, or file is empty!");
+		auto shaderSources = PreProcess(source);
+		{
+			Timer timer;
+			CompileOrGetVulkanBinaries(shaderSources);
+			if (Utils::IsAMDGpu())
+				CreateProgramAMD();
+			else
+			{
+				CompileOrGetOpenGLBinaries();
+				CreateProgram();
+			}
+			ML_CORE_WARN("Shader creation took {0} ms", timer.ElapsedMillis());
+		}
 		
 		// Get name from filepath
 		auto lastSlash = filepath.find_last_of("/\\");
@@ -50,7 +136,15 @@ namespace Milky {
 		std::unordered_map<GLenum, std::string> sources;
 		sources[GL_VERTEX_SHADER] = vertexSrc;
 		sources[GL_FRAGMENT_SHADER] = fragmentSrc;
-		Compile(sources);
+
+		CompileOrGetVulkanBinaries(sources);
+		if (Utils::IsAMDGpu())
+			CreateProgramAMD();
+		else
+		{
+			CompileOrGetOpenGLBinaries();
+			CreateProgram();
+		}
 	}
 
 	OpenGLShader::~OpenGLShader()
@@ -65,15 +159,22 @@ namespace Milky {
 		ML_PROFILE_FUNCTION();
 
 		std::string result;
-		ML_CORE_TRACE("Loading shader source file: '{0}'", filepath);
+		ML_CORE_INFO("Loading shader source file: '{0}'", filepath);
 		std::ifstream in(filepath, std::ios::in | std::ios::binary);
 		if (in)
 		{
 			in.seekg(0, std::ios::end);
-			result.resize(in.tellg());
-			in.seekg(0, std::ios::beg);
-			in.read(&result[0], result.size());
-			in.close();
+			size_t size = in.tellg();
+			if (size != -1)
+			{
+				result.resize(size);
+				in.seekg(0, std::ios::beg);
+				in.read(&result[0], size);
+			}
+			else
+			{
+				ML_CORE_ERROR("Could not read from shader source file: '{0}'", filepath);
+			}
 		}
 		else
 		{
@@ -88,102 +189,333 @@ namespace Milky {
 
 		std::unordered_map<GLenum, std::string> shaderSources;
 
-		std::string toSearch = source;
-		std::smatch match;
-		while (std::regex_search(toSearch, match, typeTokenRegex))
+		const char* typeToken = "#type";
+		const size_t typeTokenLength = strlen(typeToken);
+		size_t pos = source.find(typeToken, 0); //Start of shader type declaration line
+		while (pos != std::string::npos)
 		{
-			GLenum type = ShaderTypeFromString(match[1]);
-			ML_CORE_ASSERT(type, "Syntax error in shader file: Invalid '#type' keyword!");
-			std::string src = match.suffix();
-			src = src.substr(0, src.find(typeToken));
-			shaderSources[type] = src;
-			toSearch = match.suffix();
+			size_t eol = source.find_first_of("\r\n", pos); //End of shader type declaration line
+			ML_CORE_ASSERT(eol != std::string::npos, "Syntax error");
+			size_t begin = pos + typeTokenLength + 1; //Start of shader type name (after "#type " keyword)
+			std::string type = source.substr(begin, eol - begin);
+			ML_CORE_ASSERT(Utils::ShaderTypeFromString(type), "Invalid shader type specified");
+
+			size_t nextLinePos = source.find_first_not_of("\r\n", eol); //Start of shader code after shader type declaration line
+			ML_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
+			pos = source.find(typeToken, nextLinePos); //Start of next shader type declaration line
+
+			shaderSources[Utils::ShaderTypeFromString(type)] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
 		}
-		ML_CORE_ASSERT(shaderSources.size(), "Syntax error in shader file: No '#type' directive(s) found.");
 
 		return shaderSources;
 	}
 
-	void OpenGLShader::Compile(std::unordered_map<GLenum, std::string>& shaderSources)
+	void OpenGLShader::CompileOrGetVulkanBinaries(const std::unordered_map<GLenum, std::string>& shaderSources)
 	{
 		ML_PROFILE_FUNCTION();
 
 		GLuint program = glCreateProgram();
-		ML_CORE_ASSERT(shaderSources.size() <= 2, "Shader program asset can only contain a maximum of 2 shaders!");
-		std::array<GLenum, 2> glShaderIDs;
-		int glShaderIDIndex = 0;
-		for (auto& kv : shaderSources)
-		{
-			GLenum type = kv.first;
-			const std::string& source = kv.second;
-			
-			GLuint shader = glCreateShader(type);
 
-			const GLchar* source_cstr = source.c_str();
-			glShaderSource(shader, 1, &source_cstr, 0);
+		shaderc::Compiler compiler;
+		shaderc::CompileOptions options;
+		options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
+		const bool optimize = true;
+		if (optimize)
+			options.SetOptimizationLevel(shaderc_optimization_level_performance);
+
+		std::filesystem::path cacheDirectory = Utils::GetCacheDirectory();
+
+		auto& shaderData = m_VulkanSPIRV;
+		shaderData.clear();
+		for (auto&& [stage, source] : shaderSources)
+		{
+			std::filesystem::path shaderFilePath = m_FilePath;
+			std::filesystem::path cachedPath = cacheDirectory / (shaderFilePath.filename().string() + Utils::GLShaderStageCachedVulkanFileExtension(stage));
+
+			std::ifstream in(cachedPath, std::ios::in | std::ios::binary);
+			if (in.is_open())
+			{
+				in.seekg(0, std::ios::end);
+				auto size = in.tellg();
+				in.seekg(0, std::ios::beg);
+
+				auto& data = shaderData[stage];
+				data.resize(size / sizeof(uint32_t));
+				in.read((char*)data.data(), size);
+			}
+			else
+			{
+				shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, Utils::GLShaderStageToShaderC(stage), m_FilePath.c_str(), options);
+				if (module.GetCompilationStatus() != shaderc_compilation_status_success)
+				{
+					ML_CORE_ERROR(module.GetErrorMessage());
+					ML_CORE_ASSERT(false);
+				}
+
+				shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
+
+				std::ofstream out(cachedPath, std::ios::out | std::ios::binary);
+				if (out.is_open())
+				{
+					auto& data = shaderData[stage];
+					out.write((char*)data.data(), data.size() * sizeof(uint32_t));
+					out.flush();
+					out.close();
+				}
+			}
+		}
+
+		for (auto&& [stage, data] : shaderData)
+			Reflect(stage, data);
+	}
+
+	void OpenGLShader::CompileOrGetOpenGLBinaries()
+	{
+		ML_PROFILE_FUNCTION();
+
+		auto& shaderData = m_OpenGLSPIRV;
+
+		shaderc::Compiler compiler;
+		shaderc::CompileOptions options;
+		options.SetTargetEnvironment(shaderc_target_env_opengl, shaderc_env_version_opengl_4_5);
+		const bool optimize = false;
+		if (optimize)
+			options.SetOptimizationLevel(shaderc_optimization_level_performance);
+
+		std::filesystem::path cacheDirectory = Utils::GetCacheDirectory();
+
+		shaderData.clear();
+		m_OpenGLSourceCode.clear();
+		for (auto&& [stage, spirv] : m_VulkanSPIRV)
+		{
+			std::filesystem::path shaderFilePath = m_FilePath;
+			std::filesystem::path cachedPath = cacheDirectory / (shaderFilePath.filename().string() + Utils::GLShaderStageCachedOpenGLFileExtension(stage));
+
+			std::ifstream in(cachedPath, std::ios::in | std::ios::binary);
+			if (in.is_open())
+			{
+				in.seekg(0, std::ios::end);
+				auto size = in.tellg();
+				in.seekg(0, std::ios::beg);
+
+				auto& data = shaderData[stage];
+				data.resize(size / sizeof(uint32_t));
+				in.read((char*)data.data(), size);
+			}
+			else
+			{
+				spirv_cross::CompilerGLSL glslCompiler(spirv);
+				m_OpenGLSourceCode[stage] = glslCompiler.compile();
+				auto& source = m_OpenGLSourceCode[stage];
+
+				shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, Utils::GLShaderStageToShaderC(stage), m_FilePath.c_str());
+				if (module.GetCompilationStatus() != shaderc_compilation_status_success)
+				{
+					ML_CORE_ERROR(module.GetErrorMessage());
+					ML_CORE_ASSERT(false);
+				}
+
+				shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
+
+				std::ofstream out(cachedPath, std::ios::out | std::ios::binary);
+				if (out.is_open())
+				{
+					auto& data = shaderData[stage];
+					out.write((char*)data.data(), data.size() * sizeof(uint32_t));
+					out.flush();
+					out.close();
+				}
+			}
+		}
+	}
+
+	void OpenGLShader::CompileOpenGLBinariesAMD(GLenum& program, std::array<uint32_t, 2>& shaderIDs)
+	{
+		int glShaderIDIndex = 0;
+		for (auto&& [stage, spirv] : m_VulkanSPIRV)
+		{
+			spirv_cross::CompilerGLSL glslCompiler(spirv);
+			auto& source = glslCompiler.compile();
+
+			uint32_t shader;
+
+			shader = glCreateShader(stage);
+
+			const GLchar* sourceCStr = source.c_str();
+			glShaderSource(shader, 1, &sourceCStr, 0);
 
 			glCompileShader(shader);
 
-			GLint isCompiled = 0;
+			int isCompiled = 0;
 			glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
 			if (isCompiled == GL_FALSE)
 			{
-				GLint maxLength = 0;
+				int maxLength = 0;
 				glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
 
-				// The maxLength includes the NULL character
-				std::vector<GLchar> infoLog(maxLength);
+				std::vector<char> infoLog(maxLength);
 				glGetShaderInfoLog(shader, maxLength, &maxLength, &infoLog[0]);
 
-				// We don't need the shader anymore.
 				glDeleteShader(shader);
 
-				// Use the infoLog as you see fit.
 				ML_CORE_ERROR("{0}", infoLog.data());
-				ML_CORE_ASSERT(false, "OpenGL shader compile error!");
-
+				ML_CORE_ASSERT(false, "Shader compilation failure!");
 				return;
 			}
 			glAttachShader(program, shader);
-			glShaderIDs[glShaderIDIndex++] = shader;
+			shaderIDs[glShaderIDIndex++] = shader;
+		}
+	}
+
+	void OpenGLShader::CreateProgram()
+	{
+		GLuint program = glCreateProgram();
+
+		std::vector<GLuint> shaderIDs;
+		for (auto&& [stage, spirv] : m_OpenGLSPIRV)
+		{
+			GLuint shaderID = shaderIDs.emplace_back(glCreateShader(stage));
+			glShaderBinary(1, &shaderID, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(), (GLsizei)(spirv.size() * sizeof(uint32_t)));
+			glSpecializeShader(shaderID, "main", 0, nullptr, nullptr);
+			glAttachShader(program, shaderID);
 		}
 
-		m_RendererID = program;
-
-		// Link our program
 		glLinkProgram(program);
 
-		// Note the different functions here: glGetProgram* instead of glGetShader*.
-		GLint isLinked = 0;
-		glGetProgramiv(program, GL_LINK_STATUS, (int*)&isLinked);
+		GLint isLinked;
+		glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
 		if (isLinked == GL_FALSE)
 		{
-			GLint maxLength = 0;
+			GLint maxLength;
 			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
 
-			// The maxLength includes the NULL character
 			std::vector<GLchar> infoLog(maxLength);
-			glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
+			glGetProgramInfoLog(program, maxLength, &maxLength, infoLog.data());
+			ML_CORE_ERROR("Shader linking failed ({0}):\n{1}", m_FilePath, infoLog.data());
 
-			// We don't need the program anymore.
 			glDeleteProgram(program);
 
-			// Don't leak shaders either.
-			for (auto id : glShaderIDs)
+			for (auto id : shaderIDs)
 				glDeleteShader(id);
-
-			// Use the infoLog as you see fit.
-			ML_CORE_ERROR("{0}", infoLog.data());
-			ML_CORE_ASSERT(false, "OpenGL shader program link error!");
-			
-			return;
 		}
 
-		// Always detach shaders after a successful link.
-		for (auto id : glShaderIDs)
+		for (auto id : shaderIDs)
 		{
 			glDetachShader(program, id);
 			glDeleteShader(id);
+		}
+
+		m_RendererID = program;
+	}
+
+	static bool VerifyProgramLink(GLenum& program)
+	{
+		int isLinked = 0;
+		glGetProgramiv(program, GL_LINK_STATUS, (int*)&isLinked);
+		if (isLinked == GL_FALSE)
+		{
+			int maxLength = 0;
+			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+
+			std::vector<char> infoLog(maxLength);
+			glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
+
+			glDeleteProgram(program);
+
+			ML_CORE_ERROR("{0}", infoLog.data());
+			ML_CORE_ASSERT(false, "Shader link failure!");
+			return false;
+		}
+		return true;
+	}
+
+	void OpenGLShader::CreateProgramAMD()
+	{
+		GLuint program = glCreateProgram();
+
+		std::filesystem::path cacheDirectory = Utils::GetCacheDirectory();
+		std::filesystem::path shaderFilePath = m_FilePath;
+		std::filesystem::path cachedPath = cacheDirectory / (shaderFilePath.filename().string() + Utils::GLShaderCachedOpenGLAMDFileExtension());
+		std::ifstream in(cachedPath, std::ios::ate | std::ios::binary);
+
+		if (in.is_open())
+		{
+			auto size = in.tellg();
+			in.seekg(0);
+
+			auto& data = std::vector<char>(size);
+			uint32_t format = 0;
+			in.read((char*)&format, sizeof(uint32_t));
+			in.read((char*)data.data(), size);
+			glProgramBinary(program, format, data.data(), (GLsizei)data.size());
+
+			bool linked = VerifyProgramLink(program);
+
+			if (!linked)
+				return;
+		}
+		else
+		{
+			std::array<uint32_t, 2> shaderIDs;
+			CompileOpenGLBinariesAMD(program, shaderIDs);
+			glLinkProgram(program);
+
+			bool linked = VerifyProgramLink(program);
+
+			if (linked)
+			{
+				// Save program data
+				GLint formats = 0;
+				glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &formats);
+				ML_CORE_ASSERT(formats > 0, "Driver does not support binary format");
+				Utils::CreateCacheDirectoryIfNeeded();
+				GLint length = 0;
+				glGetProgramiv(program, GL_PROGRAM_BINARY_LENGTH, &length);
+				auto shaderData = std::vector<char>(length);
+				uint32_t format = 0;
+				glGetProgramBinary(program, length, nullptr, &format, shaderData.data());
+				std::ofstream out(cachedPath, std::ios::out | std::ios::binary);
+				if (out.is_open())
+				{
+					out.write((char*)&format, sizeof(uint32_t));
+					out.write(shaderData.data(), shaderData.size());
+					out.flush();
+					out.close();
+				}
+			}
+
+			for (auto& id : shaderIDs)
+			{
+				glDetachShader(program, id);
+				glDeleteShader(id);
+			}
+		}
+
+		m_RendererID = program;
+	}
+
+	void OpenGLShader::Reflect(GLenum stage, const std::vector<uint32_t>& shaderData)
+	{
+		ML_CORE_ASSERT(shaderData.size(), "Shader data is empty!");
+		spirv_cross::Compiler compiler(shaderData);
+		spirv_cross::ShaderResources resources = compiler.get_shader_resources();
+
+		ML_CORE_TRACE("OpenGLShader::Reflect - {0} {1}", Utils::GLShaderStageToString(stage), m_FilePath);
+		ML_CORE_TRACE("    {0} uniform buffers", resources.uniform_buffers.size());
+		ML_CORE_TRACE("    {0} resources", resources.sampled_images.size());
+
+		ML_CORE_TRACE("Uniform buffers:");
+		for (const auto& resource : resources.uniform_buffers)
+		{
+			const auto& bufferType = compiler.get_type(resource.base_type_id);
+			uint32_t bufferSize = (uint32_t)compiler.get_declared_struct_size(bufferType);
+			uint32_t binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+			int memberCount = (int)bufferType.member_types.size();
+
+			ML_CORE_TRACE("  {0}", resource.name);
+			ML_CORE_TRACE("    Size = {0}", bufferSize);
+			ML_CORE_TRACE("    Binding = {0}", binding);
+			ML_CORE_TRACE("    Members = {0}", memberCount);
 		}
 	}
 

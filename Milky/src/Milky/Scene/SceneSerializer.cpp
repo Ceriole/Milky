@@ -326,11 +326,16 @@ namespace Milky {
 	bool SceneSerializer::Deserialize(const std::string & filepath)
 	{
 		ML_CORE_INFO("Loading scene file: '{0}'", filepath);
-		std::ifstream stream(filepath);
-		std::stringstream strStream;
-		strStream << stream.rdbuf();
+		YAML::Node data;
+		try
+		{
+			data = YAML::LoadFile(filepath);
+		}
+		catch (YAML::ParserException e)
+		{
+			return false;
+		}
 
-		YAML::Node data = YAML::Load(strStream.str());
 		if (!data["Scene"])
 			return false;
 
