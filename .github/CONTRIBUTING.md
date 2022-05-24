@@ -10,7 +10,7 @@ These guidelines are intended to help smooth that process, and allow me to revie
 
 Bugs should be reported on the [GitHub Issue Tracker][issue-tracker] using the bug report template (TODO).
 
-Follow the advice in [How do I ask a good question?][how-to-ask]. While the article is intended for people asking questions on Stack Overflow, it all applies to writing a good bug report too.
+Follow the advice in [How do I ask a good question?][how-to-ask] While the article is intended for people asking questions on Stack Overflow, it all applies to writing a good bug report too.
 
 ## Requesting New Features
 
@@ -48,7 +48,7 @@ If you're not sure what any of that means, check out Thinkful's [GitHub Pull Req
 
 - Follow the coding conventions, which are quite small.
 
-### Coding Conventions
+## Coding Conventions
 
 - Naming convention:
   - For functions we use pascal case: **`FunctionName`**.
