@@ -8,7 +8,7 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "EditorLayer.h"
+#include "Editor/EditorLayer.h"
 
 namespace Milky {
 

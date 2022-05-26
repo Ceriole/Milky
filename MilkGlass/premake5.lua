@@ -15,6 +15,7 @@ project "MilkGlass"
 
 	includedirs
 	{
+		"src",
 		"%{wks.location}/Milky/vendor/spdlog/include",
 		"%{wks.location}/Milky/src",
 		"%{wks.location}/Milky/vendor",

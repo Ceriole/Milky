@@ -12,7 +12,7 @@ namespace Milky {
 	class Scene {
 		friend class Entity;
 		friend class SceneSerializer;
-		friend class ScenePanels;
+		friend class SceneHierarchyPanel;
 	public:
 		Scene();
 		~Scene();

@@ -15,6 +15,10 @@ namespace Milky {
 		static std::pair<float, float> GetMousePosition();
 		static float GetMouseX();
 		static float GetMouseY();
+
+		static bool IsCtrlDown() { return IsKeyPressed(Key::LeftControl) || IsKeyPressed(Key::RightControl); }
+		static bool IsAltDown() { return IsKeyPressed(Key::LeftAlt) || IsKeyPressed(Key::RightAlt); }
+		static bool IsShiftDown() { return IsKeyPressed(Key::LeftShift) || IsKeyPressed(Key::RightShift); }
 	};
 
 }

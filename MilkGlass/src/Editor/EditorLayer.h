@@ -2,19 +2,15 @@
 
 #include <Milky.h>
 
-#include "Panels/ScenePanels.h"
+#include "Panels/EditorPanel.h"
+#include "Panels/ViewportPanel.h"
+#include "Panels/SceneHierarchyPanel.h"
+#include "Panels/PropertiesPanel.h"
+#include "Panels/ContentBrowserPanel.h"
+#include "Panels/StatsPanel.h"
 
 #include <imgui/imgui.h>
 #include <ImGuizmo.h>
-
-#include "Milky/Renderer/EditorCamera.h"
-
-#define VIEWPORT_TITLE		"Viewport"
-#define VIEWPORT_ICON		ICON_FA_CUBE
-#define VIEWPORT_TAB_TITLE	VIEWPORT_ICON " " VIEWPORT_TITLE
-#define STATS_TITLE			"Stats"
-#define STATS_ICON			ICON_FA_COG
-#define STATS_TAB_TITLE		ICON_FA_COG " " STATS_TITLE
 
 #define MILKY_SCENE_FILE_EXT		".mlscn"
 #define MILKY_SCENE_FILE_DECRIPTION "Milky Scene (*" MILKY_SCENE_FILE_EXT ")"
@@ -44,8 +40,6 @@ namespace Milky {
 		void SetActiveFilepath(const std::filesystem::path& path);
 		void SetEditorDefaultDockLayout();
 		void ShowEditorMenuBar();
-		void ShowEditorViewport();
-		void ShowEditorStats(); // TODO: Temporary
 
 		void ShowFileMenu();
 		void ShowRecentFilesMenu();
@@ -58,32 +52,22 @@ namespace Milky {
 		void ShowAboutPopup();
 
 		bool OnKeyPressed(KeyPressedEvent& e);
-		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
-
-		bool CanMousePick();
 	private:
-		Ref<VertexArray> m_SquareVA;
-		Ref<Shader> m_FlatColorShader;
-		Ref<Framebuffer> m_Framebuffer;
+		Ref<EditorData> m_Context;
 
 		std::vector<std::filesystem::path> m_RecentPaths;
 		std::filesystem::path m_ActivePath;
-		Ref<Scene> m_ActiveScene;
-		Entity m_HoveredEntity;
-
-		EditorCamera m_EditorCamera;
 
 		ImGuiID m_DockspaceID = NULL;
 
-		bool m_ShowViewport = true, m_ShowStats = true;
 		bool m_ShowWelcome = false, m_ShowHelp = false, m_ShowAbout = false;
-		bool m_ViewportFocused = false, m_ViewportHovered = false;
-		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
-		glm::vec2 m_ViewportBounds[2] = { { 0.0f, 0.0f }, { 0.0f, 0.0f } };
 
-		int m_GizmoType = -1;
-		ImGuizmo::MODE m_GizmoMode = ImGuizmo::MODE::LOCAL;
+		std::vector<EditorPanel*> m_Panels;
 
-		ScenePanels m_ScenePanels;
+		ViewportPanel* m_ViewportPanel = nullptr;
+		SceneHierarchyPanel* m_SceneHierarchyPanel = nullptr;
+		PropertiesPanel* m_PropertiesPanel = nullptr;
+		ContentBrowserPanel* m_ContentBrowserPanel = nullptr;
+		StatsPanel* m_StatsPanel = nullptr;
 	};
 }

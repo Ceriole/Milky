@@ -11,8 +11,9 @@
 #include "Milky/Utils/PlatformUtils.h"
 #include "Milky/Math/Math.h"
 
-namespace Milky {
+#include "EditorUtils.h"
 
+namespace Milky {
 
 	EditorLayer::EditorLayer()
 		: Layer("MilkGlassEditorLayer")
@@ -22,11 +23,27 @@ namespace Milky {
 	{
 		ML_PROFILE_FUNCTION();
 
+		m_Context = CreateRef<EditorData>();
+
+		m_Context->Selection = CreateRef<SelectionContext>();
+
 		FramebufferSpecification fbSpec;
 		fbSpec.Attachments = { FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::RED_INTEGER, FrameBufferTextureFormat::Depth };
 		fbSpec.Width = 1280;
 		fbSpec.Height = 720;
-		m_Framebuffer = Framebuffer::Create(fbSpec);
+		m_Context->Framebuffer = Framebuffer::Create(fbSpec);
+
+		m_ViewportPanel = new ViewportPanel(m_Context, "Viewport", ICON_FA_CUBE, "Ctrl+Shift+V");
+		m_SceneHierarchyPanel = new SceneHierarchyPanel(m_Context, "Scene Hierarchy", ICON_FA_LIST, "F3");
+		m_PropertiesPanel = new PropertiesPanel(m_Context, "Properties", ICON_FA_WRENCH, "F4");
+		m_ContentBrowserPanel = new ContentBrowserPanel(m_Context, "Content Browser", ICON_FA_ARCHIVE, "");
+		m_StatsPanel = new StatsPanel(m_Context, "Stats", ICON_FA_CODE, "");
+
+		m_Panels.push_back(m_ViewportPanel);
+		m_Panels.push_back(m_SceneHierarchyPanel);
+		m_Panels.push_back(m_PropertiesPanel);
+		m_Panels.push_back(m_ContentBrowserPanel);
+		m_Panels.push_back(m_StatsPanel);
 
 		auto commandLineArgs = Application::Get().GetCommandLineArgs();
 		if (commandLineArgs.Count > 1)
@@ -49,43 +66,32 @@ namespace Milky {
 	{
 		ML_PROFILE_FUNCTION();
 
-		if (Milky::FramebufferSpecification spec = m_Framebuffer->GetSpecification(); m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && (spec.Width != m_ViewportSize.x || spec.Height != m_ViewportSize.y))
+		auto viewportSize = m_ViewportPanel->Size();
+
+		if (Milky::FramebufferSpecification spec = m_Context->Framebuffer->GetSpecification(); viewportSize.x > 0.0f && viewportSize.y > 0.0f && (spec.Width != viewportSize.x || spec.Height != viewportSize.y))
 		{
-			m_Framebuffer->Resize((uint32_t) m_ViewportSize.x, (uint32_t) m_ViewportSize.y);
-			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
-			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			m_Context->Framebuffer->Resize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+			m_Context->Camera->SetViewportSize(viewportSize.x, viewportSize.y);
+			m_Context->ActiveScene->OnViewportResize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
 		}
 
-		m_EditorCamera.OnUpdate(ts);
+		m_Context->Camera->OnUpdate(ts);
 
 		// Render
 		Renderer2D::ResetStats();
-		m_Framebuffer->Bind();
+		m_Context->Framebuffer->Bind();
 		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		RenderCommand::Clear();
-
 		// Clear entity ID attachment to -1
-		m_Framebuffer->ClearAttachment(1, -1);
+		m_Context->Framebuffer->ClearAttachment(1, -1);
+
 		// Update scene
-		m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera);
+		m_Context->ActiveScene->OnUpdateEditor(ts, *m_Context->Camera);
 
-		auto[mx, my] = ImGui::GetMousePos();
-		mx -= m_ViewportBounds[0].x;
-		my -= m_ViewportBounds[0].y;
-		glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
-		my = viewportSize.y - my;
-		int mouseX = (int)mx;
-		int mouseY = (int)my;
+		for (auto& p : m_Panels)
+			p->OnUpdate(ts);
 
-		if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
-		{
-			int pixelData = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
-			m_HoveredEntity = pixelData == -1 ? Entity{} : Entity{ (entt::entity)pixelData, m_ActiveScene.get() };
-		}
-		else
-			m_HoveredEntity = Entity{};
-
-		m_Framebuffer->Unbind();
+		m_Context->Framebuffer->Unbind();
 	}
 
 	void EditorLayer::OnImGuiRender()
@@ -122,10 +128,8 @@ namespace Milky {
 
 		ShowEditorMenuBar();
 
-		m_ScenePanels.OnImguiRender();
-
-		ShowEditorViewport();
-		ShowEditorStats();
+		for (auto& p : m_Panels)
+			p->OnImGuiRender();
 
 		ShowWelcomePopup();
 		ShowHelpPopup();
@@ -136,24 +140,26 @@ namespace Milky {
 
 	void EditorLayer::SetEditorDefaultDockLayout()
 	{
-		m_ScenePanels.SetShown(true);
-		m_ShowViewport = true, m_ShowStats = true;
+		for (auto& p : m_Panels)
+			p->Show = true;
 
 		ImGui::DockBuilderRemoveNode(m_DockspaceID);
 		ImGui::DockBuilderAddNode(m_DockspaceID, ImGuiDockNodeFlags_DockSpace);
 		ImGui::DockBuilderSetNodeSize(m_DockspaceID, ImGui::GetWindowSize());
 
-		ImGuiID dock_main_id = m_DockspaceID;
-		ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.30f, NULL, &dock_main_id);
-		ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.40f, NULL, &dock_main_id);
+		ImGuiID dock_viewport_id = m_DockspaceID;
+		ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_viewport_id, ImGuiDir_Left, 0.30f, NULL, &dock_viewport_id);
+		ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_viewport_id, ImGuiDir_Right, 0.40f, NULL, &dock_viewport_id);
+		ImGuiID dock_id_down = ImGui::DockBuilderSplitNode(dock_viewport_id, ImGuiDir_Down, 0.40f, NULL, &dock_viewport_id);
 
 		ImGuiID dock_id_properties = NULL;
 		ImGuiID dock_id_scene_hierarchy = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Up, 0.60f, NULL, &dock_id_properties);
 
-		ImGui::DockBuilderDockWindow(SCENE_HIERARCHY_TAB_TITLE, dock_id_scene_hierarchy);
-		ImGui::DockBuilderDockWindow(PROPERTIES_TAB_TITLE, dock_id_properties);
-		ImGui::DockBuilderDockWindow(VIEWPORT_TAB_TITLE, dock_main_id);
-		ImGui::DockBuilderDockWindow(STATS_TAB_TITLE, dock_id_right);
+		ImGui::DockBuilderDockWindow(m_ViewportPanel->TabTitle(), dock_viewport_id);
+		ImGui::DockBuilderDockWindow(m_SceneHierarchyPanel->TabTitle(), dock_id_scene_hierarchy);
+		ImGui::DockBuilderDockWindow(m_PropertiesPanel->TabTitle(), dock_id_properties);
+		ImGui::DockBuilderDockWindow(m_ContentBrowserPanel->TabTitle(), dock_id_down);
+		ImGui::DockBuilderDockWindow(m_StatsPanel->TabTitle(), dock_id_right);
 		ImGui::DockBuilderFinish(m_DockspaceID);
 	}
 
@@ -167,157 +173,6 @@ namespace Milky {
 			ShowHelpMenu();
 
 			ImGui::EndMenuBar();
-		}
-	}
-
-	void EditorLayer::ShowEditorViewport()
-	{
-		if (m_ShowViewport)
-		{
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-			if (ImGui::Begin(VIEWPORT_TAB_TITLE, &m_ShowViewport))
-			{
-				auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
-				auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
-				auto viewportOffset = ImGui::GetWindowPos(); // Where ImGui will start rendering for the viewport.
-				m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
-				m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
-				m_ViewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
-
-				m_ViewportFocused = ImGui::IsWindowFocused();
-				m_ViewportHovered = ImGui::IsWindowHovered();
-				Application::Get().GetImGuiLayer()->SetBlockEvents(!m_ViewportFocused && !m_ViewportHovered);
-
-				uint32_t textureId = m_Framebuffer->GetColorAttachmentRendererID();
-				ImGui::Image((void*)(uint64_t)textureId, ImGui::GetContentRegionAvail(), ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-			}
-			
-			// Gizmos
-			Entity selectedEntity = m_ScenePanels.GetSelectedEntity(); // TODO: change
-			if (selectedEntity && m_GizmoType >= 0)
-			{
-				ImGuizmo::SetOrthographic(false);
-				ImGuizmo::SetDrawlist();
-				
-				ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportSize.x, m_ViewportSize.y);
-
-				// Camera
-
-				/*
-				// Gizmo camera from entity
-				auto camEntity = m_ActiveScene->GetPrimaryCameraEntity();
-				const auto& cc = camEntity.GetComponent<CameraComponent>();
-				const glm::mat4& cameraProjection = cc.Camera.GetProjection();
-				glm::mat4 cameraView = glm::inverse(camEntity.GetComponent<TransformComponent>().GetTransform());
-				*/
-
-				const glm::mat4& cameraProjection = m_EditorCamera.GetProjection();
-				glm::mat4 cameraView = m_EditorCamera.GetViewMatrix();
-				
-				// Entity Transform
-				auto & tc = selectedEntity.GetComponent<TransformComponent>();
-
-				glm::mat4 transform = tc.GetTransform();
-				// Snapping
-				bool snap = Input::IsKeyPressed(Key::LeftControl); // TODO: Snap setting? Set snap values in UI
-				float snapValue = 0.5f; // Snap to 0.5m for translation and scale
-				if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
-					snapValue = 45.0f; // Snap to 45 degrees for rotation
-
-				float snapValues[3] = { snapValue, snapValue, snapValue };
-
-				// Manupulate
-				if (ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), (ImGuizmo::OPERATION)m_GizmoType, m_GizmoMode, glm::value_ptr(transform), nullptr, snap ? snapValues : nullptr))
-				{
-					glm::vec3 translation, rotation, scale;	
-					Math::DecomposeTransform(transform, translation, rotation, scale);
-
-					glm::vec3 deltaRotation = rotation - tc.Rotation;
-					tc.Translation = translation;
-					tc.Rotation += deltaRotation;
-					tc.Scale = scale;
-				}
-			}
-
-			ImGui::End();
-			ImGui::PopStyleVar();
-		}
-	}
-
-	void EditorLayer::ShowEditorStats()
-	{
-		if (m_ShowStats)
-		{
-			if (ImGui::Begin(STATS_TAB_TITLE, &m_ShowStats))
-			{
-				auto stats = Renderer2D::GetStats();
-				if (ImGui::TreeNodeEx("Renderer2D", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
-					if (ImGui::BeginTable("renderer2DStats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
-					{
-						ImGui::TableNextRow();
-						ImGui::TableNextColumn();
-						ImGui::Text("Draw Calls");
-						ImGui::TableNextColumn();
-						ImGui::Text("%d", stats.DrawCalls);
-						ImGui::TableNextRow();
-						ImGui::TableNextColumn();
-						ImGui::Text("Quads");
-						ImGui::TableNextColumn();
-						ImGui::Text("%d", stats.QuadCount);
-						ImGui::TableNextRow();
-						ImGui::TableNextColumn();
-						ImGui::Text("Vertices");
-						ImGui::TableNextColumn();
-						ImGui::Text("%d", stats.GetTotalVertexCount());
-						ImGui::TableNextRow();
-						ImGui::TableNextColumn();
-						ImGui::Text("Indices");
-						ImGui::TableNextColumn();
-						ImGui::Text("%d", stats.GetTotalIndexCount());
-						ImGui::EndTable();
-					}
-					ImGui::PopStyleColor();
-					ImGui::TreePop();
-				}
-
-				if (ImGui::TreeNodeEx("Editor", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
-					if (ImGui::BeginTable("editorStats", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
-					{
-						ImGui::TableNextRow();
-						ImGui::TableNextColumn();
-						ImGui::Text("Entity Count");
-						ImGui::TableNextColumn();
-						ImGui::Text("%d", m_ActiveScene->GetNumEntites());
-
-						ImGui::TableNextRow();
-						ImGui::TableNextColumn();
-						ImGui::Text("Selected Entity");
-						ImGui::TableNextColumn();
-
-						if (m_ScenePanels.GetSelectedEntity())
-							ImGui::Text(m_ScenePanels.GetSelectedEntity().GetTag().c_str());
-						else
-							ImGui::TextDisabled("None");
-
-						ImGui::TableNextRow();
-						ImGui::TableNextColumn();
-						ImGui::Text("Hovered Entity");
-						ImGui::TableNextColumn();
-						if (m_HoveredEntity)
-							ImGui::Text(m_HoveredEntity.GetTag().c_str());
-						else
-							ImGui::TextDisabled("None");
-						ImGui::EndTable();
-					}
-					ImGui::PopStyleColor();
-					ImGui::TreePop();
-				}
-			}
-			ImGui::End();
 		}
 	}
 
@@ -354,7 +209,7 @@ namespace Milky {
 	{
 		if (ImGui::BeginMenu("Scene"))
 		{
-			m_ScenePanels.ShowNewEntityMenu();
+			EditorUtils::ShowNewEntityMenu(m_Context->ActiveScene);
 			ImGui::EndMenu();
 		}
 	}
@@ -363,9 +218,8 @@ namespace Milky {
 	{
 		if (ImGui::BeginMenu("Window"))
 		{
-			m_ScenePanels.ShowWindowMenuItems();
-			if (ImGui::MenuItemEx(VIEWPORT_TITLE, VIEWPORT_ICON, "Ctrl+Shift+V", m_ShowViewport)) m_ShowViewport = !m_ShowViewport;
-			if (ImGui::MenuItemEx(STATS_TITLE, STATS_ICON, NULL, m_ShowStats)) m_ShowStats = !m_ShowStats;
+			for (auto& p : m_Panels)
+				p->ShowMenuItem();
 			ImGui::Separator();
 			if (ImGui::MenuItemEx("Reset Layout", ICON_FA_REDO, "Ctrl+Shift+R", false))
 				ImGui::DockBuilderRemoveNode(m_DockspaceID);
@@ -456,14 +310,13 @@ namespace Milky {
 
 	void EditorLayer::CreateEmptyScene()
 	{
-		m_ActiveScene = CreateRef<Scene>();
-		m_EditorCamera = EditorCamera(30.0f, 1.78f, 0.1f, 1000.0f);
-		m_ScenePanels.SetContext(m_ActiveScene);
+		m_Context->ActiveScene = CreateRef<Scene>();
+		m_Context->Camera = CreateRef<EditorCamera>(30.0f, 1.78f, 0.1f, 1000.0f);
 
-		if (m_ViewportSize.x > 0 && m_ViewportSize.y > 0)
+		if (m_ViewportPanel->Size().x > 0 && m_ViewportPanel->Size().y)
 		{
-			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+			m_Context->ActiveScene->OnViewportResize((uint32_t)m_ViewportPanel->Size().x, (uint32_t)m_ViewportPanel->Size().y);
+			m_Context->Camera->SetViewportSize(m_ViewportPanel->Size().x, m_ViewportPanel->Size().y);
 		}
 	}
 
@@ -482,19 +335,19 @@ namespace Milky {
 				ML_WARN("Could not load '{0}' - Not a scene file.", path.filename().string());
 				return;
 			}
-			Ref<Scene> oldScene = m_ActiveScene;
+			Ref<Scene> oldScene = m_Context->ActiveScene;
 			CreateEmptyScene();
-			SceneSerializer serializer(m_ActiveScene);
+			SceneSerializer serializer(m_Context->ActiveScene);
 			if (serializer.Deserialize(path.string()))
 				SetActiveFilepath(path);
 			else
-				m_ActiveScene = oldScene;
+				m_Context->ActiveScene = oldScene;
 		}
 	}
 
 	void EditorLayer::SaveScene(const std::filesystem::path& path)
 	{
-		SceneSerializer serializer(m_ActiveScene);
+		SceneSerializer serializer(m_Context->ActiveScene);
 		if (!path.empty())
 		{
 			serializer.Serialize(path.string());
@@ -540,11 +393,13 @@ namespace Milky {
 
 	void EditorLayer::OnEvent(Event& e)
 	{
-		m_EditorCamera.OnEvent(e);
+		m_Context->Camera->OnEvent(e);
+
+		for (auto& p : m_Panels)
+			p->OnEvent(e);
 
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<KeyPressedEvent>(ML_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
-		dispatcher.Dispatch<MouseButtonPressedEvent>(ML_BIND_EVENT_FN(EditorLayer::OnMouseButtonPressed));
 	}
 
 	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
@@ -574,46 +429,18 @@ namespace Milky {
 			if (ctrl)
 				NewScene();
 			break;
-			// Gizmos
-		case Key::Q:
-			m_GizmoType = -1;
-			break;
-		case Key::W:
-			m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
-			break;
-		case Key::E:
-			m_GizmoType = ImGuizmo::OPERATION::ROTATE;
-			break;
-		case Key::R:
-			m_GizmoType = ImGuizmo::OPERATION::SCALE;
-			break;
 		case Key::F3:
-			m_ScenePanels.ShowSceneHierarchyPanel = !m_ScenePanels.ShowSceneHierarchyPanel;
+			m_SceneHierarchyPanel->ToggleOpen();
 			break;
 		case Key::F4:
 			if (alt)
 				Application::Get().Close();
 			else
-				m_ScenePanels.ShowPropertiesPanel = !m_ScenePanels.ShowPropertiesPanel;
+				m_PropertiesPanel->ToggleOpen();
 			break;
 		}
 
 		return false;
-	}
-
-	bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
-	{
-		if (e.GetMouseButton() == Mouse::ButtonLeft)
-		{
-			if(CanMousePick())
-				m_ScenePanels.SetSelectedEntity(m_HoveredEntity);
-		}
-		return false;
-	}
-
-	bool EditorLayer::CanMousePick()
-	{
-		return m_ViewportHovered && !ImGuizmo::IsOver() && !m_EditorCamera.IsUsing();
 	}
 
 }
