@@ -11,13 +11,14 @@ namespace Milky {
 	{
 		ActiveScene = CreateRef<Scene>();
 		Camera = CreateRef<EditorCamera>(30.0f, 1.78f, 0.1f, 1000.0f);
+		Selection = CreateRef<SelectionContext>();
 		HoveredEntity = {};
 
-		/*if (m_ViewportPanel->Size().x && m_ViewportPanel->Size().y)
+		if (m_ViewportSize.x && m_ViewportSize.y)
 		{
-			m_Context->ActiveScene->OnViewportResize((uint32_t)m_ViewportPanel->Size().x, (uint32_t)m_ViewportPanel->Size().y);
-			m_Context->Camera->SetViewportSize(m_ViewportPanel->Size().x, m_ViewportPanel->Size().y);
-		}*/
+			ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			Camera->SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+		}
 	}
 
 	void EditorContext::NewScene()
@@ -105,4 +106,16 @@ namespace Milky {
 		return false;
 	}
 
+	void EditorContext::SetViewportSize(const glm::vec2& viewportSize)
+	{
+		if (m_ViewportSize == viewportSize)
+			return;
+		m_ViewportSize = viewportSize;
+		if (Milky::FramebufferSpecification spec = Framebuffer->GetSpecification(); m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && (spec.Width != m_ViewportSize.x || spec.Height != m_ViewportSize.y))
+		{
+			Framebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			Camera->SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+			ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		}
+	}
 }

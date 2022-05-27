@@ -1,10 +1,10 @@
 #include "mlpch.h"
 #include "ImGuiUtil.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include <imgui.h>
 #include <imgui_internal.h>
-
-#include <glm/gtc/type_ptr.hpp>
 
 #include <IconsFontAwesome5.h>
 
@@ -212,6 +212,30 @@ namespace Milky {
 			return ShowControl(label, [&]() -> bool
 				{
 					return ImGui::ColorEdit4("##Color", glm::value_ptr(color));
+				}, columnWidth);
+		}
+
+		bool ShowTextControl(const std::string& label, std::string& text, size_t maxLength, float columnWidth)
+		{
+			return ShowControl(label, [&]() -> bool
+				{
+					bool edited = false;
+					text.resize(maxLength);
+					char* buf = new char[maxLength];
+					std::strcpy(buf, text.c_str());
+					if (ImGui::InputText("##Text", buf, maxLength))
+						edited |= true;
+					text = std::string(buf);
+					delete[] buf;
+					return edited;
+				}, columnWidth);
+		}
+
+		bool ShowButtonControl(const std::string& label, const std::string& buttonText, const glm::vec2& size, float columnWidth)
+		{
+			return ShowControl(label, [&]() -> bool
+				{
+					return ImGui::Button(buttonText.c_str(), { size.x, size.y });
 				}, columnWidth);
 		}
 

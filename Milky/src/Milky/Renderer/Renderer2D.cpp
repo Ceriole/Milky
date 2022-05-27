@@ -377,7 +377,10 @@ namespace Milky {
 
 	void Renderer2D::DrawSprite(const glm::mat4& transform, SpriteRendererComponent& sprite, int entityID)
 	{
-		DrawQuad(transform, sprite.Color, entityID);
+		if (sprite.Texture)
+			DrawQuad(transform, sprite.Texture, sprite.Color, sprite.TilingFactor, entityID);
+		else
+			DrawQuad(transform, sprite.Color, entityID);
 	}
 
 	void Renderer2D::ResetStats()

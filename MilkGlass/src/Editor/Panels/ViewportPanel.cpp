@@ -47,6 +47,7 @@ namespace Milky {
 	void ViewportPanel::ShowContent()
 	{
 		auto viewportSize = Size();
+		m_Context->SetViewportSize(viewportSize);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
 		

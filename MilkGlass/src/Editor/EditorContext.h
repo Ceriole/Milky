@@ -35,9 +35,12 @@ namespace Milky {
 		
 		const std::filesystem::path ActivePath() const { return m_ActivePath; };
 		const std::vector<std::filesystem::path> RecentPaths() const { return m_RecentPaths; };
+		const glm::vec2 ViewportSize() const { return m_ViewportSize; };
+		void SetViewportSize(const glm::vec2& viewportSize);
 	private:
 		std::vector<std::filesystem::path> m_RecentPaths;
 		std::filesystem::path m_ActivePath;
+		glm::vec2 m_ViewportSize = { 0, 0 };
 	};
 
 }

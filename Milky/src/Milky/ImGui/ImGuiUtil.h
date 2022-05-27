@@ -49,5 +49,9 @@ namespace Milky {
 
 		bool ShowColorControl(const std::string& label, glm::vec4& color, float columnWidth = 100.0f);
 
+		bool ShowTextControl(const std::string& label, std::string& text, size_t maxLength = 128, float columnWidth = 100.0f);
+
+		bool ShowButtonControl(const std::string& label, const std::string& buttonText, const glm::vec2& size = {0,0}, float columnWidth = 100.0f);
+
 	}
 }

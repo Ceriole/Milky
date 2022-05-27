@@ -66,15 +66,6 @@ namespace Milky {
 	{
 		ML_PROFILE_FUNCTION();
 
-		auto viewportSize = m_ViewportPanel->Size();
-
-		if (Milky::FramebufferSpecification spec = m_Context->Framebuffer->GetSpecification(); viewportSize.x > 0.0f && viewportSize.y > 0.0f && (spec.Width != viewportSize.x || spec.Height != viewportSize.y))
-		{
-			m_Context->Framebuffer->Resize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-			m_Context->Camera->SetViewportSize(viewportSize.x, viewportSize.y);
-			m_Context->ActiveScene->OnViewportResize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-		}
-
 		m_Context->Camera->OnUpdate(ts);
 
 		// Render
