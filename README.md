@@ -1,6 +1,6 @@
-# Milky [![License](https://img.shields.io/github/license/Ceriole/Milky.svg)](https://github.com/Ceriole/Milky/blob/main/LICENSE)
+# Milky [![License](https://img.shields.io/github/license/Ceriole/Milky_Logo.svg)](https://github.com/Ceriole/Milky/blob/main/LICENSE)
 
-![Milky](/Resources/Branding/Milky_Logo_500x.png?raw=true "Milky")
+![Milky](https://github.com/Ceriole/Milky/raw/main/Resources/Branding/Milky_Logo.svg?raw=true "Milky")
 
 Milky is an open-source independently written interactive application and rendering engine for Windows.
 
