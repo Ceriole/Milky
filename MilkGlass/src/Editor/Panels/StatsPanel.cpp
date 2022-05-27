@@ -6,7 +6,7 @@
 
 namespace Milky {
 
-	StatsPanel::StatsPanel(const Ref<EditorData>& context, const std::string& title, const std::string& icon, const std::string& shortcut)
+	StatsPanel::StatsPanel(const Ref<EditorContext>& context, const std::string& title, const std::string& icon, const std::string& shortcut)
 		: EditorPanel(context, title, icon, shortcut)
 	{}
 

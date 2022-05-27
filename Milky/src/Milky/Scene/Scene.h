@@ -14,6 +14,7 @@ namespace Milky {
 		friend class SceneSerializer;
 		friend class SceneHierarchyPanel;
 	public:
+		Scene(const Scene& scene) = default;
 		Scene();
 		~Scene();
 

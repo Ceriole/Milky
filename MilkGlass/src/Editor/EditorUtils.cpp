@@ -13,22 +13,6 @@
 
 namespace Milky::EditorUtils {
 
-	void HandleEntitySelection(const Ref<SelectionContext>& selection, Entity entity)
-	{
-		if (Input::IsCtrlDown())
-		{
-			if (entity && selection->CanSelect(SelectionType::Entity))
-				selection->Toggle(entity);
-		}
-		else
-		{
-			if (entity)
-				selection->Set(entity);
-			else
-				selection->Clear();
-		}
-	}
-
 	void ShowNewEntityMenu(const Ref<Scene>& scene)
 	{
 		if (ImGui::BeginMenu("New Entity"))
@@ -194,6 +178,17 @@ namespace Milky::EditorUtils {
 				// TODO: Textures and materials
 				UIControls::ShowColorControl("Color", component.Color);
 			});
+	}
+
+	glm::vec3 GetAverageVector(const std::vector<glm::vec3>& vectors)
+	{
+		glm::vec3 result(0.0f);
+		if (vectors.empty())
+			return result;
+		for (const glm::vec3& vec : vectors)
+			result += vec;
+		result /= vectors.size();
+		return result;
 	}
 
 	template<typename Comp, typename UIFunction>

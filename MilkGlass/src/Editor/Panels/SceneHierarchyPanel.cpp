@@ -10,7 +10,7 @@
 
 namespace Milky {
 
-	SceneHierarchyPanel::SceneHierarchyPanel(const Ref<EditorData>& context, const std::string& title, const std::string& icon, const std::string& shortcut)
+	SceneHierarchyPanel::SceneHierarchyPanel(const Ref<EditorContext>& context, const std::string& title, const std::string& icon, const std::string& shortcut)
 		: EditorPanel(context, title, icon, shortcut)
 	{}
 
@@ -39,7 +39,7 @@ namespace Milky {
 		ImGuiTreeNodeFlags flags = (m_Context->Selection->Has(entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 		bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, flags, tag.c_str());
 		if (ImGui::IsMouseClicked(0) && ImGui::IsItemHovered())
-			EditorUtils::HandleEntitySelection(m_Context->Selection, entity);
+			m_Context->SelectEntity(entity);
 
 		bool entityDeleted = false;
 		if (ImGui::BeginPopupContextItem())

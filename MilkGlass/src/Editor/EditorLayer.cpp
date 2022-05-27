@@ -23,7 +23,7 @@ namespace Milky {
 	{
 		ML_PROFILE_FUNCTION();
 
-		m_Context = CreateRef<EditorData>();
+		m_Context = CreateRef<EditorContext>();
 
 		m_Context->Selection = CreateRef<SelectionContext>();
 
@@ -49,10 +49,10 @@ namespace Milky {
 		if (commandLineArgs.Count > 1)
 		{
 			auto sceneFilePath = commandLineArgs[1];
-			OpenScene(sceneFilePath);
+			m_Context->OpenScene(sceneFilePath);
 		}
 		else
-			NewScene();
+			m_Context->NewScene();
 
 		m_ShowWelcome = true;
 	}
@@ -180,10 +180,10 @@ namespace Milky {
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::MenuItemEx("New", ICON_FA_FILE, "Ctrl+N", false)) NewScene();
-			if (ImGui::MenuItemEx("Open...", ICON_FA_FOLDER_OPEN, "Ctrl+O", false)) OpenSceneDialog();
-			if (ImGui::MenuItemEx("Save", ICON_FA_SAVE, "Ctrl+S", false)) SaveScene();
-			if (ImGui::MenuItemEx("Save As...", NULL, "Ctrl+Shift+S", false)) SaveSceneDialog();
+			if (ImGui::MenuItemEx("New", ICON_FA_FILE, "Ctrl+N", false)) m_Context->NewScene();
+			if (ImGui::MenuItemEx("Open...", ICON_FA_FOLDER_OPEN, "Ctrl+O", false)) m_Context->OpenSceneDialog();
+			if (ImGui::MenuItemEx("Save", ICON_FA_SAVE, "Ctrl+S", false)) m_Context->SaveScene();
+			if (ImGui::MenuItemEx("Save As...", NULL, "Ctrl+Shift+S", false)) m_Context->SaveSceneDialog();
 			ImGui::Separator();
 			ShowRecentFilesMenu();
 			ImGui::Separator();
@@ -194,13 +194,17 @@ namespace Milky {
 
 	void EditorLayer::ShowRecentFilesMenu()
 	{
-		if (ImGui::BeginMenuEx("Open Recent", ICON_FA_FOLDER_OPEN, !m_RecentPaths.empty()))
+		if (ImGui::BeginMenuEx("Open Recent", ICON_FA_FOLDER_OPEN, !m_Context->RecentPaths().empty()))
 		{
-			for (int i = 0; i < m_RecentPaths.size(); i++)
-			{
-				if (ImGui::MenuItemEx(m_RecentPaths.at(i).string().c_str(), std::to_string(i).c_str()))
-					OpenScene(m_RecentPaths.at(i).string());
-			}
+			auto& recentPaths = m_Context->RecentPaths();
+			if (!recentPaths.empty())
+				for (int i = 0; i < recentPaths.size(); i++)
+				{
+					if (ImGui::MenuItemEx(recentPaths.at(i).string().c_str(), std::to_string(i).c_str()))
+						m_Context->OpenScene(recentPaths.at(i).string());
+				}
+			else
+				ImGui::MenuItem("No recent paths.", NULL, nullptr, false);
 			ImGui::EndMenu();
 		}
 	}
@@ -308,88 +312,7 @@ namespace Milky {
 		}
 	}
 
-	void EditorLayer::CreateEmptyScene()
-	{
-		m_Context->ActiveScene = CreateRef<Scene>();
-		m_Context->Camera = CreateRef<EditorCamera>(30.0f, 1.78f, 0.1f, 1000.0f);
-
-		if (m_ViewportPanel->Size().x > 0 && m_ViewportPanel->Size().y)
-		{
-			m_Context->ActiveScene->OnViewportResize((uint32_t)m_ViewportPanel->Size().x, (uint32_t)m_ViewportPanel->Size().y);
-			m_Context->Camera->SetViewportSize(m_ViewportPanel->Size().x, m_ViewportPanel->Size().y);
-		}
-	}
-
-	void EditorLayer::NewScene()
-	{
-		CreateEmptyScene();
-		SetActiveFilepath("");
-	}
-
-	void EditorLayer::OpenScene(const std::filesystem::path& path)
-	{
-		if (!path.empty())
-		{
-			if (path.extension().string() != MILKY_SCENE_FILE_EXT)
-			{
-				ML_WARN("Could not load '{0}' - Not a scene file.", path.filename().string());
-				return;
-			}
-			Ref<Scene> oldScene = m_Context->ActiveScene;
-			CreateEmptyScene();
-			SceneSerializer serializer(m_Context->ActiveScene);
-			if (serializer.Deserialize(path.string()))
-				SetActiveFilepath(path);
-			else
-				m_Context->ActiveScene = oldScene;
-		}
-	}
-
-	void EditorLayer::SaveScene(const std::filesystem::path& path)
-	{
-		SceneSerializer serializer(m_Context->ActiveScene);
-		if (!path.empty())
-		{
-			serializer.Serialize(path.string());
-			SetActiveFilepath(path);
-		}
-		else if(!m_ActivePath.empty())
-		{
-			serializer.Serialize(m_ActivePath.string());
-			SetActiveFilepath(m_ActivePath);
-		}
-		else
-		{
-			std::filesystem::path newFilepath = FileDialogs::Save(MILKY_SCENE_FILE_FILTER);
-			serializer.Serialize(newFilepath.string());
-			SetActiveFilepath(newFilepath);
-		}
-	}
-
-	void EditorLayer::OpenSceneDialog()
-	{
-		std::filesystem::path filepath = FileDialogs::Open(MILKY_SCENE_FILE_FILTER);
-		if (!filepath.empty())
-			OpenScene(filepath);
-	}
-
-	void EditorLayer::SaveSceneDialog()
-	{
-		std::string filepath = FileDialogs::Save(MILKY_SCENE_FILE_FILTER);
-		if (!filepath.empty())
-			SaveScene(filepath);
-	}
-
-	void EditorLayer::SetActiveFilepath(const std::filesystem::path& path)
-	{
-		if (!m_ActivePath.empty())
-		{
-			m_RecentPaths.erase(std::remove(m_RecentPaths.begin(), m_RecentPaths.end(), m_ActivePath), m_RecentPaths.end());
-			m_RecentPaths.insert(m_RecentPaths.begin(), m_ActivePath.string());
-		}
-		m_ActivePath = path.string();
-		Application::Get().GetWindow().SetTitle("MilkGlass - " + (m_ActivePath.empty() ? "Unsaved Scene" : m_ActivePath.string()));
-	}
+	
 
 	void EditorLayer::OnEvent(Event& e)
 	{
@@ -417,17 +340,17 @@ namespace Milky {
 		case Key::S:
 			if (ctrl)
 				if (shift)
-					SaveSceneDialog();
+					m_Context->SaveSceneDialog();
 				else
-					SaveScene();
+					m_Context->SaveScene();
 			break;
 		case Key::O:
 			if (ctrl)
-				OpenSceneDialog();
+				m_Context->OpenSceneDialog();
 			break;
 		case Key::N:
 			if (ctrl)
-				NewScene();
+				m_Context->NewScene();
 			break;
 		case Key::F3:
 			m_SceneHierarchyPanel->ToggleOpen();

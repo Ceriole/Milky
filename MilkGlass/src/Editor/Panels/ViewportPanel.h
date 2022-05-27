@@ -10,7 +10,7 @@ namespace Milky {
 	class ViewportPanel : public EditorPanel
 	{
 	public:
-		ViewportPanel(const Ref<EditorData>& context, const std::string& title, const std::string& icon, const std::string& shortcut);
+		ViewportPanel(const Ref<EditorContext>& context, const std::string& title, const std::string& icon, const std::string& shortcut);
 
 		virtual void OnUpdate(Timestep ts) override;
 

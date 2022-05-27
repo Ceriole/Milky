@@ -8,25 +8,16 @@
 #include "Milky/Events/KeyEvent.h"
 #include "Milky/Events/MouseEvent.h"
 
-#include "Editor/SelectionContext.h"
+#include "Editor/EditorContext.h"
 
 namespace Milky {
-
-	struct EditorData
-	{
-		Ref<Scene> ActiveScene;
-		Ref<SelectionContext> Selection;
-		Ref<EditorCamera> Camera;
-		Ref<Framebuffer> Framebuffer;
-		Entity HoveredEntity;
-	};
 
 	class EditorPanel
 	{
 	public:
-		EditorPanel(const Ref<EditorData>& context, const std::string& title, const std::string& icon, const std::string& shortcut);
+		EditorPanel(const Ref<EditorContext>& context, const std::string& title, const std::string& icon, const std::string& shortcut);
 
-		void SetContext(const Ref<EditorData>& context) { m_Context = context; }
+		void SetContext(const Ref<EditorContext>& context) { m_Context = context; }
 		
 		void OnImGuiRender();
 		void ShowMenuItem();
@@ -57,7 +48,7 @@ namespace Milky {
 		bool m_Hovered = false, m_Focused = false;
 	protected:
 		std::string m_Title, m_Icon, m_TabTitle, m_Shortcut;
-		Ref<EditorData> m_Context;
+		Ref<EditorContext> m_Context;
 		glm::vec2 m_Bounds[2];
 	};
 

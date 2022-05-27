@@ -12,7 +12,9 @@
 
 namespace Milky {
 
-	ViewportPanel::ViewportPanel(const Ref<EditorData>& context, const std::string& title, const std::string& icon, const std::string& shortcut)
+	extern const std::filesystem::path g_AssetPath;
+
+	ViewportPanel::ViewportPanel(const Ref<EditorContext>& context, const std::string& title, const std::string& icon, const std::string& shortcut)
 		: EditorPanel(context, title, icon, shortcut)
 	{}
 
@@ -47,11 +49,23 @@ namespace Milky {
 		auto viewportSize = Size();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-
+		
 		Application::Get().GetImGuiLayer()->SetBlockEvents(!IsFocused() && !IsHovered());
 
+		// Draw framebuffer onto window
 		uint32_t textureId = m_Context->Framebuffer->GetColorAttachmentRendererID();
 		ImGui::Image(reinterpret_cast<void*>(textureId), ImGui::GetContentRegionAvail(), ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(ML_PAYLOAD_TYPE_ASSET))
+			{
+				const wchar_t* path = (const wchar_t*)payload->Data;
+				m_Context->OpenScene(std::filesystem::path(g_AssetPath) / path);
+			}
+
+			ImGui::EndDragDropTarget();
+		}
 
 		// Gizmos
 		Entity selectedEntity = m_Context->Selection->GetEntity();
@@ -133,7 +147,7 @@ namespace Milky {
 		if (e.GetMouseButton() == Mouse::ButtonLeft)
 		{
 			if (CanMousePick())
-				EditorUtils::HandleEntitySelection(m_Context->Selection, m_Context->HoveredEntity);
+				m_Context->SelectEntity(m_Context->HoveredEntity);
 		}
 		return false;
 	}

@@ -7,7 +7,7 @@ namespace Milky {
 	class PropertiesPanel : public EditorPanel
 	{
 	public:
-		PropertiesPanel(const Ref<EditorData>& context, const std::string& title, const std::string& icon, const std::string& shortcut);
+		PropertiesPanel(const Ref<EditorContext>& context, const std::string& title, const std::string& icon, const std::string& shortcut);
 	protected:
 		virtual void ShowContent() override;
 	};

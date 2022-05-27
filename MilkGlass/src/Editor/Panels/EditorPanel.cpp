@@ -5,7 +5,7 @@
 
 namespace Milky {
 	
-	EditorPanel::EditorPanel(const Ref<EditorData>& context, const std::string& title, const std::string& icon, const std::string& shortcut)
+	EditorPanel::EditorPanel(const Ref<EditorContext>& context, const std::string& title, const std::string& icon, const std::string& shortcut)
 		: m_Title(title), m_Icon(icon), m_Shortcut(shortcut)
 	{
 		m_TabTitle = m_Icon + "  " + m_Title;
