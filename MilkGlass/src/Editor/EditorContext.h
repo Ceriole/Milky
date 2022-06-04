@@ -13,6 +13,14 @@
 
 namespace Milky {
 
+	enum class SceneState
+	{
+		Edit = 0,
+		Play = 1,
+		Pause = 2,
+		Simulate = 3
+	};
+
 	struct EditorContext
 	{
 	public:
@@ -21,6 +29,7 @@ namespace Milky {
 		Ref<EditorCamera> Camera;
 		Ref<Framebuffer> Framebuffer;
 		Entity HoveredEntity;
+		SceneState State;
 
 	public:
 		void CreateEmptyScene();
@@ -30,6 +39,9 @@ namespace Milky {
 		void SetActiveFilepath(const std::filesystem::path& path);
 		void OpenSceneDialog();
 		void SaveSceneDialog();
+
+		void OnScenePlay();
+		void OnSceneStop();
 
 		bool SelectEntity(Entity entity);
 		

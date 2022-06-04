@@ -18,8 +18,8 @@ namespace Milky {
 		: EditorPanel(context, title, icon, shortcut)
 	{
 		m_CurrentDirectory = g_AssetPath;
-		m_DirectoryIcon = Texture2D::Create("assets/textures/editor/folder_open.png");
-		m_FileIcon = Texture2D::Create("assets/textures/editor/file.png");
+		m_DirectoryIcon = Texture2D::Create("Resources/Icons/ContentBrowser/folder_open.png");
+		m_FileIcon = Texture2D::Create("Resources/Icons/ContentBrowser/file.png");
 	};
 
 	void ContentBrowserPanel::ShowContent()

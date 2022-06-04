@@ -34,6 +34,7 @@ namespace Milky {
 		void ShowSceneMenu();
 		void ShowWindowMenu();
 		void ShowHelpMenu();
+		void ShowToolbar();
 
 		void ShowWelcomePopup();
 		void ShowHelpPopup();
@@ -51,7 +52,8 @@ namespace Milky {
 		ContentBrowserPanel* m_ContentBrowserPanel = nullptr;
 		StatsPanel* m_StatsPanel = nullptr;
 
-		bool m_ShowWelcome = false, m_ShowHelp = false, m_ShowAbout = false;
+		Ref<Texture2D> m_IconPlay, m_IconStop, m_IconPause;
 
+		bool m_ShowWelcome = false, m_ShowHelp = false, m_ShowAbout = false;
 	};
 }

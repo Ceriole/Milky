@@ -118,4 +118,14 @@ namespace Milky {
 			ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		}
 	}
+
+	void EditorContext::OnScenePlay()
+	{
+		State = SceneState::Play;
+	}
+
+	void EditorContext::OnSceneStop()
+	{
+		State = SceneState::Edit;
+	}
 }

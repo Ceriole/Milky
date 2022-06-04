@@ -54,7 +54,13 @@ namespace Milky {
 		else
 			m_Context->NewScene();
 
+		m_IconPlay = Texture2D::Create("Resources/Icons/play.png");
+		m_IconStop = Texture2D::Create("Resources/Icons/stop.png");
+		m_IconPause = Texture2D::Create("Resources/Icons/pause.png");
+
+#ifndef ML_DEBUG
 		m_ShowWelcome = true;
+#endif
 	}
 
 	void EditorLayer::OnDetach()
@@ -118,6 +124,7 @@ namespace Milky {
 		style.WindowMinSize.x = minWinSizeX;
 
 		ShowEditorMenuBar();
+		ShowToolbar();
 
 		for (auto& p : m_Panels)
 			p->OnImGuiRender();
@@ -233,6 +240,23 @@ namespace Milky {
 			if (ImGui::MenuItemEx("About", ICON_FA_ADDRESS_BOOK)) m_ShowAbout = true;
 			ImGui::EndMenu();
 		}
+	}
+
+	void EditorLayer::ShowToolbar()
+	{
+		ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+		float size = ImGui::GetContentRegionAvail().y;
+		Ref<Texture2D> icon = m_Context->State == SceneState::Edit ? m_IconPlay : m_IconStop;
+		if (ImGui::ImageButton((ImTextureID)icon->GetRendererID(), ImVec2(size, size)))
+		{
+			if (m_Context->State == SceneState::Edit)
+				m_Context->OnScenePlay();
+			else if (m_Context->State == SceneState::Play)
+				m_Context->OnSceneStop();
+		}
+
+		ImGui::End();
 	}
 
 	void EditorLayer::ShowWelcomePopup()
