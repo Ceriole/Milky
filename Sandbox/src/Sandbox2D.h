@@ -10,7 +10,7 @@ public:
 
 	virtual void OnAttach() override;
 	virtual void OnDetach() override;
-	virtual void OnUpdateRuntime(Milky::Timestep ts) override;
+	virtual void OnUpdate(Milky::Timestep ts) override;
 	virtual void OnImGuiRender() override;
 	virtual void OnEvent(Milky::Event& event) override;
 private:

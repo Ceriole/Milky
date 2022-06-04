@@ -16,7 +16,7 @@ class ParticleSystem
 public:
 	ParticleSystem(uint32_t maxParticles = 100000);
 
-	void OnUpdateRuntime(Milky::Timestep ts);
+	void OnUpdate(Milky::Timestep ts);
 	void OnRender(Milky::OrthographicCamera& camera);
 
 	void Emit(const ParticleProps& particleProps);

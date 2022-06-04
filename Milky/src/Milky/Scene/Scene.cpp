@@ -49,7 +49,7 @@ namespace Milky {
 					nsc.Instance->OnCreate();
 				}
 
-				nsc.Instance->OnUpdateRuntime(ts);
+				nsc.Instance->OnUpdate(ts);
 				// TODO: Destroy scripts in Scene::OnSceneStop
 			});
 		}

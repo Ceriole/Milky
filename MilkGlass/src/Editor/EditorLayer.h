@@ -8,6 +8,7 @@
 #include "Panels/PropertiesPanel.h"
 #include "Panels/ContentBrowserPanel.h"
 #include "Panels/StatsPanel.h"
+#include "Panels/ToolbarPanel.h"
 
 #include <imgui/imgui.h>
 #include <ImGuizmo.h>
@@ -22,7 +23,7 @@ namespace Milky {
 
 		virtual void OnAttach() override;
 		virtual void OnDetach() override;
-		virtual void OnUpdateRuntime(Timestep ts) override;
+		virtual void OnUpdate(Timestep ts) override;
 		virtual void OnImGuiRender() override;
 		virtual void OnEvent(Event& e) override;
 	private:
@@ -34,7 +35,6 @@ namespace Milky {
 		void ShowSceneMenu();
 		void ShowWindowMenu();
 		void ShowHelpMenu();
-		void ShowToolbar();
 
 		void ShowWelcomePopup();
 		void ShowHelpPopup();
@@ -51,8 +51,7 @@ namespace Milky {
 		PropertiesPanel* m_PropertiesPanel = nullptr;
 		ContentBrowserPanel* m_ContentBrowserPanel = nullptr;
 		StatsPanel* m_StatsPanel = nullptr;
-
-		Ref<Texture2D> m_IconPlay, m_IconStop, m_IconPause;
+		ToolbarPanel* m_ToolbarPanel = nullptr;
 
 		bool m_ShowWelcome = false, m_ShowHelp = false, m_ShowAbout = false;
 	};

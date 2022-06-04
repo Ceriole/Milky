@@ -8,7 +8,7 @@ namespace Milky {
 	EditorPanel::EditorPanel(const Ref<EditorContext>& context, const std::string& title, const std::string& icon, const std::string& shortcut)
 		: m_Title(title), m_Icon(icon), m_Shortcut(shortcut)
 	{
-		m_TabTitle = m_Icon + "  " + m_Title;
+		m_TabTitle = m_Icon.empty() ? m_Title : m_Icon + "  " + m_Title;
 		SetContext(context);
 	}
 	
@@ -16,7 +16,7 @@ namespace Milky {
 	{
 		if (Show)
 		{
-			if (ImGui::Begin(m_TabTitle.c_str(), &Show))
+			if (ImGui::Begin(m_TabTitle.c_str(), &Show, GetWindowFlags()))
 			{
 				CalculateBounds();
 				ShowContent();
@@ -27,7 +27,9 @@ namespace Milky {
 
 	void EditorPanel::ShowMenuItem()
 	{
-		if (ImGui::MenuItemEx(m_Title.c_str(), m_Icon.c_str(), m_Shortcut.c_str(), Show)) ToggleOpen();
+		if(ShowInMenu)
+			if (ImGui::MenuItemEx(m_Title.c_str(), m_Icon.c_str(), m_Shortcut.c_str(), Show))
+				ToggleOpen();
 	}
 
 	void EditorPanel::CalculateBounds()

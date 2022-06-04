@@ -33,17 +33,19 @@ namespace Milky {
 		fbSpec.Height = 720;
 		m_Context->Framebuffer = Framebuffer::Create(fbSpec);
 
-		m_ViewportPanel = new ViewportPanel(m_Context, "Viewport", ICON_FA_CUBE, "Ctrl+Shift+V");
-		m_SceneHierarchyPanel = new SceneHierarchyPanel(m_Context, "Scene Hierarchy", ICON_FA_LIST, "F3");
-		m_PropertiesPanel = new PropertiesPanel(m_Context, "Properties", ICON_FA_WRENCH, "F4");
-		m_ContentBrowserPanel = new ContentBrowserPanel(m_Context, "Content Browser", ICON_FA_ARCHIVE, "");
-		m_StatsPanel = new StatsPanel(m_Context, "Stats", ICON_FA_CODE, "");
+		m_ViewportPanel = new ViewportPanel(				m_Context, "Viewport",			ICON_FA_CUBE,		"Ctrl+Shift+V");
+		m_SceneHierarchyPanel = new SceneHierarchyPanel(	m_Context, "Scene Hierarchy",	ICON_FA_LIST,		"F3");
+		m_PropertiesPanel = new PropertiesPanel(			m_Context, "Properties",		ICON_FA_WRENCH,		"F4");
+		m_ContentBrowserPanel = new ContentBrowserPanel(	m_Context, "Content Browser",	ICON_FA_ARCHIVE,	"");
+		m_StatsPanel = new StatsPanel(						m_Context, "Stats",				ICON_FA_CODE,		"");
+		m_ToolbarPanel = new ToolbarPanel(					m_Context, "Toolbar",			"",					"");
 
 		m_Panels.push_back(m_ViewportPanel);
 		m_Panels.push_back(m_SceneHierarchyPanel);
 		m_Panels.push_back(m_PropertiesPanel);
 		m_Panels.push_back(m_ContentBrowserPanel);
 		m_Panels.push_back(m_StatsPanel);
+		m_Panels.push_back(m_ToolbarPanel);
 
 		auto commandLineArgs = Application::Get().GetCommandLineArgs();
 		if (commandLineArgs.Count > 1)
@@ -53,10 +55,6 @@ namespace Milky {
 		}
 		else
 			m_Context->NewScene();
-
-		m_IconPlay = Texture2D::Create("Resources/Icons/play.png");
-		m_IconStop = Texture2D::Create("Resources/Icons/stop.png");
-		m_IconPause = Texture2D::Create("Resources/Icons/pause.png");
 
 #ifndef ML_DEBUG
 		m_ShowWelcome = true;
@@ -68,11 +66,9 @@ namespace Milky {
 		ML_PROFILE_FUNCTION();
 	}
 
-	void EditorLayer::OnUpdateRuntime(Timestep ts)
+	void EditorLayer::OnUpdate(Timestep ts)
 	{
 		ML_PROFILE_FUNCTION();
-
-		m_Context->Camera->OnUpdate(ts);
 
 		// Render
 		Renderer2D::ResetStats();
@@ -82,8 +78,20 @@ namespace Milky {
 		// Clear entity ID attachment to -1
 		m_Context->Framebuffer->ClearAttachment(1, -1);
 
-		// Update scene
-		m_Context->ActiveScene->OnUpdateEditor(ts, *m_Context->Camera);
+		switch (m_Context->State)
+		{
+			case SceneState::Edit:
+			{
+				m_Context->Camera->OnUpdate(ts);
+				m_Context->ActiveScene->OnUpdateEditor(ts, *m_Context->Camera);
+				break;
+			}
+			case SceneState::Play:
+			{
+				m_Context->ActiveScene->OnUpdateRuntime(ts);
+				break;
+			}
+		}
 
 		for (auto& p : m_Panels)
 			p->OnUpdate(ts);
@@ -124,7 +132,6 @@ namespace Milky {
 		style.WindowMinSize.x = minWinSizeX;
 
 		ShowEditorMenuBar();
-		ShowToolbar();
 
 		for (auto& p : m_Panels)
 			p->OnImGuiRender();
@@ -146,18 +153,26 @@ namespace Milky {
 		ImGui::DockBuilderSetNodeSize(m_DockspaceID, ImGui::GetWindowSize());
 
 		ImGuiID dock_viewport_id = m_DockspaceID;
-		ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_viewport_id, ImGuiDir_Left, 0.30f, NULL, &dock_viewport_id);
-		ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_viewport_id, ImGuiDir_Right, 0.40f, NULL, &dock_viewport_id);
+		ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_viewport_id, ImGuiDir_Left, 0.20f, NULL, &dock_viewport_id);
+		ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_viewport_id, ImGuiDir_Right, 0.20f, NULL, &dock_viewport_id);
 		ImGuiID dock_id_down = ImGui::DockBuilderSplitNode(dock_viewport_id, ImGuiDir_Down, 0.40f, NULL, &dock_viewport_id);
+
+		ImGuiID dock_id_toolbar = ImGui::DockBuilderSplitNode(dock_viewport_id, ImGuiDir_Up, 0.05f, NULL, &dock_viewport_id);
 
 		ImGuiID dock_id_properties = NULL;
 		ImGuiID dock_id_scene_hierarchy = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Up, 0.60f, NULL, &dock_id_properties);
 
 		ImGui::DockBuilderDockWindow(m_ViewportPanel->TabTitle(), dock_viewport_id);
+		
 		ImGui::DockBuilderDockWindow(m_SceneHierarchyPanel->TabTitle(), dock_id_scene_hierarchy);
 		ImGui::DockBuilderDockWindow(m_PropertiesPanel->TabTitle(), dock_id_properties);
+		
 		ImGui::DockBuilderDockWindow(m_ContentBrowserPanel->TabTitle(), dock_id_down);
 		ImGui::DockBuilderDockWindow(m_StatsPanel->TabTitle(), dock_id_right);
+
+		ImGui::DockBuilderDockWindow(m_ToolbarPanel->TabTitle(), dock_id_toolbar);
+		ImGui::DockBuilderGetNode(dock_id_toolbar)->WantHiddenTabBarToggle = true;
+		
 		ImGui::DockBuilderFinish(m_DockspaceID);
 	}
 
@@ -240,23 +255,6 @@ namespace Milky {
 			if (ImGui::MenuItemEx("About", ICON_FA_ADDRESS_BOOK)) m_ShowAbout = true;
 			ImGui::EndMenu();
 		}
-	}
-
-	void EditorLayer::ShowToolbar()
-	{
-		ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-
-		float size = ImGui::GetContentRegionAvail().y;
-		Ref<Texture2D> icon = m_Context->State == SceneState::Edit ? m_IconPlay : m_IconStop;
-		if (ImGui::ImageButton((ImTextureID)icon->GetRendererID(), ImVec2(size, size)))
-		{
-			if (m_Context->State == SceneState::Edit)
-				m_Context->OnScenePlay();
-			else if (m_Context->State == SceneState::Play)
-				m_Context->OnSceneStop();
-		}
-
-		ImGui::End();
 	}
 
 	void EditorLayer::ShowWelcomePopup()

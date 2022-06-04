@@ -13,6 +13,7 @@ namespace Milky {
 		Camera = CreateRef<EditorCamera>(30.0f, 1.78f, 0.1f, 1000.0f);
 		Selection = CreateRef<SelectionContext>();
 		HoveredEntity = {};
+		State = SceneState::Edit;
 
 		if (m_ViewportSize.x && m_ViewportSize.y)
 		{

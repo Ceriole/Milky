@@ -42,8 +42,9 @@ namespace Milky {
 		void CalculateBounds();
 	protected:
 		virtual void ShowContent() = 0;
+		virtual int GetWindowFlags() { return 0; };
 	public:
-		bool Show = true;
+		bool Show = true, ShowInMenu = true;
 	private:
 		bool m_Hovered = false, m_Focused = false;
 	protected:
