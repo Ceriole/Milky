@@ -64,7 +64,7 @@ namespace Milky {
 				if (!entity.HasComponent<CameraComponent>())
 					entity.AddComponent<CameraComponent>();
 				else
-					ML_CORE_WARN("This entity already has the Camera Component!");
+					ML_CORE_WARN("This entity already has a Camera Component!");
 				ImGui::CloseCurrentPopup();
 			}
 			if (ImGui::MenuItem("Sprite Renderer", NULL, false, !entity.HasComponent<SpriteRendererComponent>()))
@@ -72,7 +72,23 @@ namespace Milky {
 				if (!entity.HasComponent<SpriteRendererComponent>())
 					entity.AddComponent<SpriteRendererComponent>();
 				else
-					ML_CORE_WARN("This entity already has the Sprite Renderer Component!");
+					ML_CORE_WARN("This entity already has a Sprite Renderer Component!");
+				ImGui::CloseCurrentPopup();
+			}
+			if (ImGui::MenuItem("Rigid Body 2D", NULL, false, !entity.HasComponent<RigidBody2DComponent>()))
+			{
+				if (!entity.HasComponent<RigidBody2DComponent>())
+					entity.AddComponent<RigidBody2DComponent>();
+				else
+					ML_CORE_WARN("This entity already has a Rigid Body 2D Component!");
+				ImGui::CloseCurrentPopup();
+			}
+			if (ImGui::MenuItem("Box Collider 2D", NULL, false, !entity.HasComponent<BoxCollider2DComponent>()))
+			{
+				if (!entity.HasComponent<BoxCollider2DComponent>())
+					entity.AddComponent<BoxCollider2DComponent>();
+				else
+					ML_CORE_WARN("This entity already has a Box Collider 2D Component!");
 				ImGui::CloseCurrentPopup();
 			}
 		}
@@ -136,9 +152,8 @@ namespace Milky {
 					auto& camera = component.Camera;
 
 					UIControls::ShowBoolControl("Primary", &component.Primary);
-					std::vector<std::string> projectionTypeStrings = { "Perspective", "Orthographic" };
 					int projType = (int)camera.GetProjectionType();
-					if (UIControls::ShowComboControl("Projection", projectionTypeStrings, projType))
+					if (UIControls::ShowComboControl("Projection", { "Perspective", "Orthographic" }, projType))
 						camera.SetProjectionType((SceneCamera::ProjectionType)projType);
 
 					switch (camera.GetProjectionType())
@@ -195,6 +210,24 @@ namespace Milky {
 						ImGui::EndDragDropTarget();
 					}
 					UIControls::ShowFloatControl("Tiling Factor", &component.TilingFactor);
+				});
+
+			ShowComponent<RigidBody2DComponent>(ICON_FA_OBJECT_GROUP " Rigid Body 2D", entity, [](RigidBody2DComponent& component)
+				{
+					int bodyType = (int)component.Type;
+					if (UIControls::ShowComboControl("Type", { "Static", "Dynamic", "Kinematic" }, bodyType))
+						component.Type = (RigidBody2DComponent::BodyType)bodyType;
+					UIControls::ShowBoolControl("Fixed Rotation", &component.FixedRotation);
+				});
+
+			ShowComponent<BoxCollider2DComponent>(ICON_FA_VECTOR_SQUARE " Box Collider 2D", entity, [](BoxCollider2DComponent& component)
+				{
+					UIControls::ShowXYControl("Offset", component.Offset);
+					UIControls::ShowXYControl("Size", component.Size, 0.5f);
+					UIControls::ShowFloatControl("Density", &component.Density, 1.0f, 0.01f, 0.0f, 1.0f);
+					UIControls::ShowFloatControl("Friction", &component.Friction, 0.5f, 0.01f, 0.0f, 1.0f);
+					UIControls::ShowFloatControl("Restitution", &component.Restitution, 0.0f, 0.01f, 0.0f, 1.0f);
+					UIControls::ShowFloatControl("Restitution\nThreshold", &component.RestitutionThreshold, 0.5f, 0.01f, 0.0f);
 				});
 		}
 

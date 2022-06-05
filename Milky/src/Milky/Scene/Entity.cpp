@@ -9,9 +9,14 @@ namespace Milky {
 		: m_Handle(handle), m_Scene(scene)
 	{}
 
-	const std::string Entity::GetTag() const
+	const std::string Entity::Tag() const
 	{
 		return HasComponent<TagComponent>() ? GetComponent<TagComponent>().Tag : "Unnamed Entity";
+	}
+
+	TransformComponent& Entity::Transform()
+	{
+		return GetComponent<TransformComponent>();
 	}
 
 }

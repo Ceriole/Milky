@@ -27,6 +27,7 @@ Entities:
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [1, 0, 0, 1]
+      TilingFactor: 1
   - Entity: 1234567891234
     TagComponent:
       Tag: Square 0
@@ -36,3 +37,4 @@ Entities:
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [0, 1, 0, 1]
+      TilingFactor: 1

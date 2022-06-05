@@ -4,6 +4,8 @@
 
 #include <entt.hpp>
 
+#include "Components/ComponentsBasic.h"
+
 namespace Milky {
 
 	class Entity
@@ -41,7 +43,8 @@ namespace Milky {
 
 		size_t ComponentCount() const { return 0; }
 
-		const std::string GetTag() const;
+		const std::string Tag() const;
+		TransformComponent& Transform();
 
 		operator bool() const { return m_Handle != entt::null; }
 		operator entt::entity() const { return m_Handle; }

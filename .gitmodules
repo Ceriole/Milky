@@ -20,3 +20,6 @@
 [submodule "Milky/vendor/ImGuizmo"]
 	path = Milky/vendor/ImGuizmo
 	url = https://github.com/Ceriole/ImGuizmo
+[submodule "Milky/vendor/Box2D"]
+	path = Milky/vendor/Box2D
+	url = https://github.com/Ceriole/box2d

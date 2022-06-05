@@ -16,7 +16,10 @@ namespace Milky {
 
 	ViewportPanel::ViewportPanel(const Ref<EditorContext>& context, const std::string& title, const std::string& icon, const std::string& shortcut)
 		: EditorPanel(context, title, icon, shortcut)
-	{}
+	{
+		m_Context->GizmoMode = ImGuizmo::MODE::LOCAL;
+		m_Context->GizmoType = -1;
+	}
 
 	void ViewportPanel::OnUpdate(Timestep ts)
 	{
@@ -70,7 +73,7 @@ namespace Milky {
 
 		// Gizmos
 		Entity selectedEntity = m_Context->Selection->GetEntity();
-		if (selectedEntity && m_GizmoType >= 0)
+		if (selectedEntity && m_Context->GizmoType >= 0 && (m_Context->GizmoType & ~0x3FFF) == 0 && m_Context->GizmoMode >= 0 && m_Context->GizmoMode < 2)
 		{
 			ImGuizmo::SetOrthographic(false);
 			ImGuizmo::SetDrawlist();
@@ -97,13 +100,13 @@ namespace Milky {
 			// Snapping
 			bool snap = Input::IsKeyPressed(Key::LeftControl); // TODO: Snap setting? Set snap values in UI
 			float snapValue = 0.5f; // Snap to 0.5m for translation and scale
-			if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
+			if (m_Context->GizmoType == ImGuizmo::OPERATION::ROTATE)
 				snapValue = 45.0f; // Snap to 45 degrees for rotation
 
 			float snapValues[3] = { snapValue, snapValue, snapValue };
 
 			// Manupulate
-			if (ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), (ImGuizmo::OPERATION)m_GizmoType, m_GizmoMode, glm::value_ptr(transform), nullptr, snap ? snapValues : nullptr))
+			if (ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), (ImGuizmo::OPERATION)m_Context->GizmoType, (ImGuizmo::MODE)m_Context->GizmoMode, glm::value_ptr(transform), nullptr, snap ? snapValues : nullptr))
 			{
 				glm::vec3 translation, rotation, scale;
 				Math::DecomposeTransform(transform, translation, rotation, scale);
@@ -127,16 +130,16 @@ namespace Milky {
 		{
 			// Gizmos
 		case Key::Q:
-			m_GizmoType = -1;
+			m_Context->GizmoType = -1;
 			break;
 		case Key::W:
-			m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
+			m_Context->GizmoType = ImGuizmo::OPERATION::TRANSLATE;
 			break;
 		case Key::E:
-			m_GizmoType = ImGuizmo::OPERATION::ROTATE;
+			m_Context->GizmoType = ImGuizmo::OPERATION::ROTATE;
 			break;
 		case Key::R:
-			m_GizmoType = ImGuizmo::OPERATION::SCALE;
+			m_Context->GizmoType = ImGuizmo::OPERATION::SCALE;
 			break;
 		}
 

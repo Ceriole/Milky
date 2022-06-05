@@ -4,15 +4,21 @@
 VULKAN_SDK = os.getenv("VULKAN_SDK")
 
 IncludeDir = {}
-IncludeDir["GLFW"] = "%{wks.location}/Milky/vendor/GLFW/include"
-IncludeDir["Glad"] = "%{wks.location}/Milky/vendor/Glad/include"
-IncludeDir["ImGui"] = "%{wks.location}/Milky/vendor/imgui"
-IncludeDir["glm"] = "%{wks.location}/Milky/vendor/glm"
-IncludeDir["stb_image"] = "%{wks.location}/Milky/vendor/stb_image"
-IncludeDir["entt"] = "%{wks.location}/Milky/vendor/entt/include"
+
 IncludeDir["yaml_cpp"] = "%{wks.location}/Milky/vendor/yaml-cpp/include"
+
+IncludeDir["entt"] = "%{wks.location}/Milky/vendor/entt/include"
+IncludeDir["Box2D"] = "%{wks.location}/Milky/vendor/Box2D/include"
+
+IncludeDir["ImGui"] = "%{wks.location}/Milky/vendor/imgui"
 IncludeDir["ImGuizmo"] = "%{wks.location}/Milky/vendor/ImGuizmo"
 IncludeDir["IconFonts"] = "%{wks.location}/Milky/vendor/IconFonts"
+
+IncludeDir["stb_image"] = "%{wks.location}/Milky/vendor/stb_image"
+IncludeDir["GLFW"] = "%{wks.location}/Milky/vendor/GLFW/include"
+IncludeDir["Glad"] = "%{wks.location}/Milky/vendor/Glad/include"
+IncludeDir["glm"] = "%{wks.location}/Milky/vendor/glm"
+
 IncludeDir["shaderc"] = "%{wks.location}/Milky/vendor/shaderc/include"
 IncludeDir["SPIRV_Cross"] = "%{wks.location}/Milky/vendor/SPIRV-Cross"
 IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
@@ -24,6 +30,7 @@ LibraryDir["VulkanSDK_Debug"] = "%{wks.location}/Milky/vendor/VulkanSDK/Lib"
 LibraryDir["VulkanSDK_DebugDLL"] = "%{wks.location}/Milky/vendor/VulkanSDK/Bin"
 
 Library = {}
+
 Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
 Library["VulkanUtils"] = "%{LibraryDir.VulkanSDK}/VkLayer_utils.lib"
 

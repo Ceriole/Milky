@@ -41,17 +41,17 @@ namespace Milky {
 		template<typename DrawFunction>
 		bool ShowControl(const std::string& label, DrawFunction drawFunction, float columnWidth = 100.0f);
 
-		bool ShowComboControl(const std::string& label, std::vector<std::string> values, int& selected, float columnWidth = 100.0f);
+		bool ShowComboControl(const std::string& label, std::vector<const char*> values, int& selected, float columnWidth = 100.0f);
 		bool ShowBoolControl(const std::string& label, bool* value, float columnWidth = 100.0f);
 
-		bool ShowFloatControl(const std::string& label, float* value, float resetValue = 0.0f, float columnWidth = 100.0f, const char* format = "%.2f", const char* drilldownFormat = "%.6f");
-		bool ShowXYZControl(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f, const char* format = "%.2f", const char* drilldownFormat = "%.6f");
-
+		bool ShowFloatControl(const std::string& label, float* value, float resetValue = 0.0f, float speed = 1.0f, float min = 0.0f, float max = 0.0f, const char* format = "%.2f", const char* drilldownFormat = "%.6f", float columnWidth = 100.0f);
+		bool ShowXYControl(const std::string& label, glm::vec2& values, float resetValue = 0.0f, const char* format = "%.2f", const char* drilldownFormat = "%.6f", float columnWidth = 100.0f);
+		bool ShowXYZControl(const std::string& label, glm::vec3& values, float resetValue = 0.0f, const char* format = "%.2f", const char* drilldownFormat = "%.6f", float columnWidth = 100.0f);
+		
 		bool ShowColorControl(const std::string& label, glm::vec4& color, float columnWidth = 100.0f);
 
 		bool ShowTextControl(const std::string& label, std::string& text, size_t maxLength = 128, float columnWidth = 100.0f);
 
 		bool ShowButtonControl(const std::string& label, const std::string& buttonText, const glm::vec2& size = {0,0}, float columnWidth = 100.0f);
-
 	}
 }

@@ -104,6 +104,28 @@ namespace YAML {
 
 namespace Milky {
 
+	static const std::string RigidBody2DBodyTypeToString(const RigidBody2DComponent::BodyType bodyType)
+	{
+		switch (bodyType)
+		{
+		case RigidBody2DComponent::BodyType::Static: return "Static";
+		case RigidBody2DComponent::BodyType::Dynamic: return "Dynamic";
+		case RigidBody2DComponent::BodyType::Kinematic: return "Kinematic";
+		}
+
+		ML_CORE_ASSERT(false, "Unknown Box2D body type!");
+		return "Unknown";
+	}
+
+	static RigidBody2DComponent::BodyType RigidBody2DStringToBodyType(const std::string& string)
+	{
+		if (string == "Static") return RigidBody2DComponent::BodyType::Static;
+		if (string == "Dynamic") return RigidBody2DComponent::BodyType::Dynamic;
+		if (string == "Kinematic") return RigidBody2DComponent::BodyType::Kinematic;
+		ML_CORE_ASSERT(false, "Unknown Box2D body type!");
+		return RigidBody2DComponent::BodyType::Static;
+	}
+
 	SceneSerializer::SceneSerializer(const Ref<Scene>& scene)
 		: m_Scene(scene)
 	{}
@@ -185,8 +207,46 @@ namespace Milky {
 
 			SpriteRendererComponent& src = entity.GetComponent<SpriteRendererComponent>();
 			out << YAML::Key << "Color" << YAML::Value << src.Color;
-
+			// TODO: Texture serialization
+			// out << YAML::Key << "Textire" << YAML::Value << src.Texture->Path();
+			out << YAML::Key << "TilingFactor" << YAML::Value << src.TilingFactor;
 			out << YAML::EndMap; // SpriteRendererComponent
+		}
+	}
+
+	template<>
+	static void SerializeComponent<RigidBody2DComponent>(YAML::Emitter& out, Entity entity)
+	{
+		if (entity.HasComponent<RigidBody2DComponent>())
+		{
+			out << YAML::Key << "RigidBody2DComponent";
+			out << YAML::BeginMap; // RigidBody2DComponent
+
+			RigidBody2DComponent& rb2dc = entity.GetComponent<RigidBody2DComponent>();
+			out << YAML::Key << "Type" << YAML::Value << RigidBody2DBodyTypeToString(rb2dc.Type);
+			out << YAML::Key << "FixedRotation" << YAML::Value << rb2dc.FixedRotation;
+
+			out << YAML::EndMap; // RigidBody2DComponent
+		}
+	}
+
+	template<>
+	static void SerializeComponent<BoxCollider2DComponent>(YAML::Emitter& out, Entity entity)
+	{
+		if (entity.HasComponent<BoxCollider2DComponent>())
+		{
+			out << YAML::Key << "BoxCollider2DComponent";
+			out << YAML::BeginMap; // BoxCollider2DComponent
+
+			BoxCollider2DComponent& bc2dc = entity.GetComponent<BoxCollider2DComponent>();
+			out << YAML::Key << "Offset" << YAML::Value << bc2dc.Offset;
+			out << YAML::Key << "Size" << YAML::Value << bc2dc.Size;
+			out << YAML::Key << "Density" << YAML::Value << bc2dc.Density;
+			out << YAML::Key << "Friction" << YAML::Value << bc2dc.Friction;
+			out << YAML::Key << "Restitution" << YAML::Value << bc2dc.Restitution;
+			out << YAML::Key << "RestitutionThreshold" << YAML::Value << bc2dc.RestitutionThreshold;
+
+			out << YAML::EndMap; // BoxCollider2DComponent
 		}
 	}
 
@@ -247,6 +307,7 @@ namespace Milky {
 		return false;
 	}
 
+
 	template<>
 	static bool DeserializeComponent<SpriteRendererComponent>(YAML::Node entityData, Entity entity)
 	{
@@ -255,6 +316,42 @@ namespace Milky {
 		{
 			SpriteRendererComponent& src = entity.AddComponent<SpriteRendererComponent>();
 			src.Color = srcData["Color"].as<glm::vec4>();
+			// TODO: Texture deserialization
+			// src.Texture = Texture2D::Create(srcData["Texture"].as<std::string>());
+			src.TilingFactor = srcData["TilingFactor"].as<float>();
+			return true;
+		}
+		return false;
+	}
+
+	template<>
+	static bool DeserializeComponent<RigidBody2DComponent>(YAML::Node entityData, Entity entity)
+	{
+		YAML::Node& rb2dcData = entityData["RigidBody2DComponent"];
+		if (rb2dcData)
+		{
+			RigidBody2DComponent& rb2dc = entity.AddComponent<RigidBody2DComponent>();
+			rb2dc.Type = RigidBody2DStringToBodyType(rb2dcData["Type"].as<std::string>());
+			rb2dc.FixedRotation = rb2dcData["FixedRotation"].as<bool>();
+			return true;
+		}
+		return false;
+	}
+
+	template<>
+	static bool DeserializeComponent<BoxCollider2DComponent>(YAML::Node entityData, Entity entity)
+	{
+		YAML::Node& bc2dcData = entityData["BoxCollider2DComponent"];
+		if (bc2dcData)
+		{
+			BoxCollider2DComponent& bc2dc = entity.AddComponent<BoxCollider2DComponent>();
+			bc2dc.Offset = bc2dcData["Offset"].as<glm::vec2>();
+			bc2dc.Size = bc2dcData["Size"].as<glm::vec2>();
+			bc2dc.Density = bc2dcData["Density"].as<float>();
+			bc2dc.Friction = bc2dcData["Friction"].as<float>();
+			bc2dc.Restitution = bc2dcData["Restitution"].as<float>();
+			bc2dc.RestitutionThreshold = bc2dcData["RestitutionThreshold"].as<float>();
+			return true;
 		}
 		return false;
 	}
@@ -268,6 +365,8 @@ namespace Milky {
 		SerializeComponent<TransformComponent>(out, entity);
 		SerializeComponent<CameraComponent>(out, entity);
 		SerializeComponent<SpriteRendererComponent>(out, entity);
+		SerializeComponent<RigidBody2DComponent>(out, entity);
+		SerializeComponent<BoxCollider2DComponent>(out, entity);
 
 		out << YAML::EndMap; // Entity
 	}
@@ -281,10 +380,12 @@ namespace Milky {
 			ML_CORE_WARN("Entity does not have TagComponent!");
 			return false;
 		}
-		ML_CORE_TRACE("Deserializing entity '{0}' ({1})", entity.GetTag(), uuid);
+		ML_CORE_TRACE("Deserializing entity '{0}' ({1})", entity.Tag(), uuid);
 		DeserializeComponent<TransformComponent>(entityData, entity);
 		DeserializeComponent<CameraComponent>(entityData, entity);
 		DeserializeComponent<SpriteRendererComponent>(entityData, entity);
+		DeserializeComponent<RigidBody2DComponent>(entityData, entity);
+		DeserializeComponent<BoxCollider2DComponent>(entityData, entity);
 
 		return true;
 	}

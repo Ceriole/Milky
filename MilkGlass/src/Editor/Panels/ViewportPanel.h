@@ -22,9 +22,6 @@ namespace Milky {
 		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 	private:
 		bool CanMousePick();
-	private:
-		int m_GizmoType = -1;
-		ImGuizmo::MODE m_GizmoMode = ImGuizmo::MODE::LOCAL;
 	};
 
 }

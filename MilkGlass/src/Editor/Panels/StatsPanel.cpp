@@ -70,7 +70,7 @@ namespace Milky {
 					case SelectionType::Entity:
 						auto entities = m_Context->Selection->GetEntities();
 						for (auto& entity : entities)
-							selectedText += entity.GetTag() + (entities.back() != entity ? ", " : "");
+							selectedText += entity.Tag() + (entities.back() != entity ? ", " : "");
 						break;
 					}
 					ImGui::Text(selectedText.c_str());
@@ -83,7 +83,7 @@ namespace Milky {
 				ImGui::Text("Hovered Entity");
 				ImGui::TableNextColumn();
 				if (m_Context->HoveredEntity)
-					ImGui::Text(m_Context->HoveredEntity.GetTag().c_str());
+					ImGui::Text(m_Context->HoveredEntity.Tag().c_str());
 				else
 					ImGui::TextDisabled("None");
 				ImGui::EndTable();

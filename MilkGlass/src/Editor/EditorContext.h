@@ -30,6 +30,8 @@ namespace Milky {
 		Ref<Framebuffer> Framebuffer;
 		Entity HoveredEntity;
 		SceneState State;
+		int GizmoType = -1;
+		int GizmoMode = 0;
 
 	public:
 		void CreateEmptyScene();
@@ -53,6 +55,7 @@ namespace Milky {
 		std::vector<std::filesystem::path> m_RecentPaths;
 		std::filesystem::path m_ActivePath;
 		glm::vec2 m_ViewportSize = { 0, 0 };
+		int m_TempGizmoType = GizmoType;
 	};
 
 }

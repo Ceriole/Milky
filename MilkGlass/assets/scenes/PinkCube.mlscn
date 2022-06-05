@@ -9,6 +9,7 @@ Entities:
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [0.988416612, 0.274772257, 0.98841697, 1]
+      TilingFactor: 1
   - Entity: 1234567891234
     TagComponent:
       Tag: Right
@@ -18,6 +19,7 @@ Entities:
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [0.640926301, 0, 0.6409266, 1]
+      TilingFactor: 1
   - Entity: 1234567891234
     TagComponent:
       Tag: Top
@@ -27,6 +29,7 @@ Entities:
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [0.934362531, 0.05411366, 0.934362948, 1]
+      TilingFactor: 1
   - Entity: 1234567891234
     TagComponent:
       Tag: Camera

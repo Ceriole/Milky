@@ -14,6 +14,8 @@ namespace Milky {
 		Selection = CreateRef<SelectionContext>();
 		HoveredEntity = {};
 		State = SceneState::Edit;
+		GizmoType = -1;
+		GizmoMode = 0;
 
 		if (m_ViewportSize.x && m_ViewportSize.y)
 		{
@@ -123,10 +125,15 @@ namespace Milky {
 	void EditorContext::OnScenePlay()
 	{
 		State = SceneState::Play;
+		ActiveScene->OnRuntimeStart();
+		m_TempGizmoType = GizmoType;
+		GizmoType = -1;
 	}
 
 	void EditorContext::OnSceneStop()
 	{
+		ActiveScene->OnRuntimeStop();
 		State = SceneState::Edit;
+		GizmoType = m_TempGizmoType;
 	}
 }
