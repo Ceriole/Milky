@@ -1,7 +1,7 @@
 #include "mlpch.h"
 #include "Entity.h"
 
-#include "Components.h"
+#include "Components/ComponentsBasic.h"
 
 namespace Milky {
 
@@ -9,9 +9,14 @@ namespace Milky {
 		: m_Handle(handle), m_Scene(scene)
 	{}
 
-	std::string Entity::GetTag()
+	const std::string Entity::Tag() const
 	{
 		return HasComponent<TagComponent>() ? GetComponent<TagComponent>().Tag : "Unnamed Entity";
+	}
+
+	TransformComponent& Entity::Transform()
+	{
+		return GetComponent<TransformComponent>();
 	}
 
 }

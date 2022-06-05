@@ -4,14 +4,14 @@
 
 #ifdef ML_PLATFORM_WINDOWS
 
-extern Milky::Application* Milky::CreateApplication();
+extern Milky::Application* Milky::CreateApplication(ApplicationCommandLineArgs args);
 
 int main(int argc, char** argv)
 {
 	Milky::Log::Init();
 
 	ML_PROFILE_BEGIN_SESSION("Startup", "MilkyProfile-Startup.json");
-	auto app = Milky::CreateApplication();
+	auto app = Milky::CreateApplication({ argc, argv });
 	ML_PROFILE_END_SESSION();
 	
 	ML_PROFILE_BEGIN_SESSION("Runtime", "MilkyProfile-Runtime.json");

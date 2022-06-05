@@ -8,10 +8,6 @@ namespace Milky {
 
 	class OpenGLShader : public Shader
 	{
-	private:
-		uint32_t m_RendererID;
-		mutable std::unordered_map<std::string, int> m_UniformLocationCache;
-		std::string m_Name;
 	public:
 		OpenGLShader(const std::string& filepath);
 		OpenGLShader(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc);
@@ -46,9 +42,24 @@ namespace Milky {
 	private:
 		std::string ReadFile(const std::string& filepath);
 		std::unordered_map<GLenum, std::string> PreProcess(const std::string& source);
-		void Compile(std::unordered_map<GLenum, std::string>& shaderSources);
-	private:
+		void CompileOrGetVulkanBinaries(const std::unordered_map<GLenum, std::string>& shaderSources);
+		void CompileOrGetOpenGLBinaries();
+		void CompileOpenGLBinariesAMD(GLenum& program, std::array<uint32_t, 2>& glShaderIDs);
+		void CreateProgram();
+		void CreateProgramAMD();
+		void Reflect(GLenum stage, const std::vector<uint32_t>& shaderData);
 		int GetUniformLocation(const std::string& name) const;
+	private:
+		uint32_t m_RendererID;
+		std::string m_FilePath;
+		std::string m_Name;
+
+		std::unordered_map<GLenum, std::vector<uint32_t>> m_VulkanSPIRV;
+		std::unordered_map<GLenum, std::vector<uint32_t>> m_OpenGLSPIRV;
+
+		std::unordered_map<GLenum, std::string> m_OpenGLSourceCode;
+
+		mutable std::unordered_map<std::string, int> m_UniformLocationCache;
 	};
 
 }

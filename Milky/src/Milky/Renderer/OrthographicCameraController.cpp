@@ -13,7 +13,7 @@ namespace Milky {
 	{
 	}
 
-	void OrthographicCameraController::OnUpdateRuntime(Timestep ts)
+	void OrthographicCameraController::OnUpdate(Timestep ts)
 	{
 		ML_PROFILE_FUNCTION();
 

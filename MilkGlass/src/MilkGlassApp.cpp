@@ -8,19 +8,16 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "EditorLayer.h"
-
-#define ML_IMGUI_NOINI
+#include "Editor/EditorLayer.h"
 
 namespace Milky {
 
 	class MilkGlass : public Application
 	{
 	public:
-		MilkGlass()
-			: Application("MilkGlass")
+		MilkGlass(ApplicationCommandLineArgs args)
+			: Application("MilkGlass", args)
 		{
-			// PushLayer(new ExampleLayer());
 			PushLayer(new EditorLayer());
 		}
 
@@ -30,9 +27,9 @@ namespace Milky {
 		}
 	};
 
-	Application* CreateApplication()
+	Application* CreateApplication(ApplicationCommandLineArgs args)
 	{
-		return new MilkGlass();
+		return new MilkGlass(args);
 	}
 
 }

@@ -9,6 +9,7 @@ Entities:
       Scale: [15.3000002, 7.9000001, 1]
     SpriteRendererComponent:
       Color: [0.00772190094, 0, 1, 1]
+      TilingFactor: 1
   - Entity: 1234567891234
     TagComponent:
       Tag: Square 1
@@ -18,6 +19,7 @@ Entities:
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [1, 0, 0, 1]
+      TilingFactor: 1
   - Entity: 1234567891234
     TagComponent:
       Tag: Camera Entity

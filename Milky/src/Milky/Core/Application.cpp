@@ -9,7 +9,8 @@ namespace Milky {
 
 	Application* Application::s_Instance = nullptr;
 
-	Application::Application(const std::string& name)
+	Application::Application(const std::string& name, ApplicationCommandLineArgs args)
+		: m_CommandLineArgs(args)
 	{
 		ML_PROFILE_FUNCTION();
 
@@ -26,9 +27,7 @@ namespace Milky {
 	}
 
 	Application::~Application()
-	{
-
-	}
+	{}
 
 	void Application::PushLayer(Layer* layer)
 	{
@@ -85,7 +84,7 @@ namespace Milky {
 				{
 					ML_PROFILE_SCOPE("LayerStack Layer::OnUpdate");
 					for (Layer* layer : m_LayerStack)
-						layer->OnUpdateRuntime(timestep);
+						layer->OnUpdate(timestep);
 				}
 			
 				m_ImGuiLayer->Begin();
@@ -96,7 +95,7 @@ namespace Milky {
 				}
 				m_ImGuiLayer->End();
 			}
-			m_Window->OnUpdateRuntime();
+			m_Window->OnUpdate();
 		}
 	}
 

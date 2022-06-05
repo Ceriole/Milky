@@ -4,6 +4,8 @@
 
 #include <entt.hpp>
 
+#include "Components/ComponentsBasic.h"
+
 namespace Milky {
 
 	class Entity
@@ -22,13 +24,13 @@ namespace Milky {
 			return component;
 		}
 		template<typename... Comps>
-		decltype(auto) GetComponent()
+		decltype(auto) GetComponent() const
 		{
 			ML_CORE_ASSERT(HasComponent<Comps...>(), "Entity does not contain component!");
 			return m_Scene->m_Registry.get<Comps...>(m_Handle);
 		}
 		template<typename... Comps>
-		bool HasComponent()
+		bool HasComponent() const
 		{
 			return m_Scene->m_Registry.all_of<Comps...>(m_Handle);
 		}
@@ -39,9 +41,10 @@ namespace Milky {
 			m_Scene->m_Registry.remove<Comps...>(m_Handle);
 		}
 
-		size_t ComponentCount() { return 0; }
+		size_t ComponentCount() const { return 0; }
 
-		std::string GetTag();
+		const std::string Tag() const;
+		TransformComponent& Transform();
 
 		operator bool() const { return m_Handle != entt::null; }
 		operator entt::entity() const { return m_Handle; }

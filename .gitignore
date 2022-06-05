@@ -12,4 +12,4 @@ bin-int/
 # Directories
 Milky/vendor/VulkanSDK
 MilkGlass/assets/cache
-scripts/__pycache__
+scripts/__pycache__ 

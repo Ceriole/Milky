@@ -3,9 +3,11 @@
 
 #include "Milky/Renderer/VertexArray.h"
 #include "Milky/Renderer/Shader.h"
+#include "Milky/Renderer/UniformBuffer.h"
 #include "Milky/Renderer/RenderCommand.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace Milky {
 
@@ -16,6 +18,9 @@ namespace Milky {
 		glm::vec2 TexCoord;
 		float TexIndex;
 		float TilingFactor;
+
+		// Editor-only
+		int EntityID;
 	};
 
 	struct Renderer2DData
@@ -40,6 +45,13 @@ namespace Milky {
 		glm::vec4 QuadVertexPositions[4];
 
 		Renderer2D::Statistics Stats;
+
+		struct CameraData
+		{
+			glm::mat4 ViewProjection;
+		};
+		CameraData CameraBuffer;
+		Ref<UniformBuffer> CameraUniformBuffer;
 	};
 
 	static Renderer2DData s_Data;
@@ -52,12 +64,13 @@ namespace Milky {
 
 		s_Data.QuadVertexBuffer = VertexBuffer::Create(Renderer2DData::MaxVertices * sizeof(QuadVertex));
 		s_Data.QuadVertexBuffer->SetLayout({
-				{ ShaderDataType::Float3, "a_Position" },
-				{ ShaderDataType::Float4, "a_Color" },
-				{ ShaderDataType::Float2, "a_TexCoord" },
-				{ ShaderDataType::Float, "a_TexIndex"},
-				{ ShaderDataType::Float, "a_TilingFactor"}
-			});
+			{ ShaderDataType::Float3,	"a_Position"	},
+			{ ShaderDataType::Float4,	"a_Color"		},
+			{ ShaderDataType::Float2,	"a_TexCoord"	},
+			{ ShaderDataType::Float,	"a_TexIndex"	},
+			{ ShaderDataType::Float,	"a_TilingFactor"},
+			{ ShaderDataType::Int,		"a_EntityID"	}
+		});
 		s_Data.QuadVertexArray->AddVertexBuffer(s_Data.QuadVertexBuffer);
 
 		s_Data.QuadVertexBufferBase = new QuadVertex[Renderer2DData::MaxVertices];
@@ -94,9 +107,6 @@ namespace Milky {
 
 		// Load and compile shader
 		s_Data.Shader2D = Shader::Create("assets/shaders/Shader2D.glsl");
-		// Set sampler array
-		s_Data.Shader2D->Bind();
-		s_Data.Shader2D->Set("u_Textures", samplers, Renderer2DData::MaxTextureSlots);
 
 		// Put blank texture in slot 0
 		s_Data.TextureSlots[0] = s_Data.BlankTexutre;
@@ -106,6 +116,8 @@ namespace Milky {
 		s_Data.QuadVertexPositions[1] = {  0.5f, -0.5f, 0.0f, 1.0f };
 		s_Data.QuadVertexPositions[2] = {  0.5f,  0.5f, 0.0f, 1.0f };
 		s_Data.QuadVertexPositions[3] = { -0.5f,  0.5f, 0.0f, 1.0f };
+
+		s_Data.CameraUniformBuffer = UniformBuffer::Create(sizeof(Renderer2DData::CameraData), 0);
 	}
 
 	void Renderer2D::Shutdown()
@@ -119,10 +131,8 @@ namespace Milky {
 	{
 		ML_PROFILE_FUNCTION();
 
-		glm::mat4 viewProj = camera.GetProjection() * glm::inverse(transform);
-
-		s_Data.Shader2D->Bind();
-		s_Data.Shader2D->Set("u_ViewProjection", viewProj);
+		s_Data.CameraBuffer.ViewProjection = camera.GetProjection() * glm::inverse(transform);
+		s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(Renderer2DData::CameraBuffer));
 
 		StartBatch();
 	}
@@ -131,20 +141,8 @@ namespace Milky {
 	{
 		ML_PROFILE_FUNCTION();
 
-		glm::mat4 viewProj = camera.GetViewProjection();
-
-		s_Data.Shader2D->Bind();
-		s_Data.Shader2D->Set("u_ViewProjection", viewProj);
-
-		StartBatch();
-	}
-
-	void Renderer2D::BeginScene(const OrthographicCamera& camera)
-	{
-		ML_PROFILE_FUNCTION();
-
-		s_Data.Shader2D->Bind();
-		s_Data.Shader2D->Set("u_ViewProjection", camera.GetViewProjectionMatrix());
+		s_Data.CameraBuffer.ViewProjection = camera.GetViewProjection();
+		s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(Renderer2DData::CameraBuffer));
 
 		StartBatch();
 	}
@@ -179,7 +177,6 @@ namespace Milky {
 
 		s_Data.Shader2D->Bind();
 		RenderCommand::DrawIndexed(s_Data.QuadVertexArray, s_Data.QuadIndexCount);
-
 		s_Data.Stats.DrawCalls++;
 	}
 
@@ -234,33 +231,12 @@ namespace Milky {
 		DrawQuad(transform, subTexture, tint, tilingFactor);
 	}
 
-	void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color)
+	void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color, int entityID)
 	{
-		ML_PROFILE_FUNCTION();
-
-		constexpr size_t quadVertexCount = 4;
-		float textureIndex = 0.0f;
-		constexpr glm::vec2 textureCoords[] = { {0.0f, 0.0f}, {1.0f,0.0f}, {1.0f, 1.0f}, {0.0f,1.0f} };
-		float tilingFactor = 1.0f;
-
-		if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
-			NextBatch();
-
-		for (size_t i = 0; i < quadVertexCount; i++)
-		{
-			s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
-			s_Data.QuadVertexBufferPtr->Color = color;
-			s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
-			s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
-			s_Data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
-			s_Data.QuadVertexBufferPtr++;
-		}
-		s_Data.QuadIndexCount += 6;
-
-		s_Data.Stats.QuadCount++;
+		DrawQuad(transform, s_Data.BlankTexutre, color, 1.0f, entityID);
 	}
 
-	void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tint, float tilingFactor)
+	void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tint, float tilingFactor, int entityID)
 	{
 		ML_PROFILE_FUNCTION();
 
@@ -297,6 +273,7 @@ namespace Milky {
 			s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
 			s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
 			s_Data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
+			s_Data.QuadVertexBufferPtr->EntityID = entityID;
 			s_Data.QuadVertexBufferPtr++;
 		}
 		s_Data.QuadIndexCount += 6;
@@ -304,7 +281,7 @@ namespace Milky {
 		s_Data.Stats.QuadCount++;
 	}
 
-	void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<SubTexture2D>& subTexture, const glm::vec4& tint, float tilingFactor)
+	void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<SubTexture2D>& subTexture, const glm::vec4& tint, float tilingFactor, int entityID)
 	{
 		ML_PROFILE_FUNCTION();
 
@@ -342,6 +319,7 @@ namespace Milky {
 			s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
 			s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
 			s_Data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
+			s_Data.QuadVertexBufferPtr->EntityID = entityID;
 			s_Data.QuadVertexBufferPtr++;
 		}
 		s_Data.QuadIndexCount += 6;
@@ -395,6 +373,14 @@ namespace Milky {
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
 		DrawQuad(transform, texture, tint, tilingFactor);
+	}
+
+	void Renderer2D::DrawSprite(const glm::mat4& transform, SpriteRendererComponent& sprite, int entityID)
+	{
+		if (sprite.Texture)
+			DrawQuad(transform, sprite.Texture, sprite.Color, sprite.TilingFactor, entityID);
+		else
+			DrawQuad(transform, sprite.Color, entityID);
 	}
 
 	void Renderer2D::ResetStats()

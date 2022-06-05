@@ -1,14 +1,32 @@
 #include "mlpch.h"
 #include "Scene.h"
 
-#include "Components.h"
+#include "Components/Components.h"
 #include "Milky/Renderer/Renderer2D.h"
 
 #include <glm/glm.hpp>
 
 #include "Entity.h"
 
+#include <box2d/b2_world.h>
+#include <box2d/b2_body.h>
+#include <box2d/b2_fixture.h>
+#include <box2d/b2_polygon_shape.h>
+
 namespace Milky {
+
+	static b2BodyType MilkyRigidBodyTypeToBox2D(RigidBody2DComponent::BodyType bodyType)
+	{
+		switch(bodyType)
+		{
+		case RigidBody2DComponent::BodyType::Static: return b2_staticBody;
+		case RigidBody2DComponent::BodyType::Dynamic: return b2_dynamicBody;
+		case RigidBody2DComponent::BodyType::Kinematic: return b2_kinematicBody;
+		}
+
+		ML_CORE_ASSERT(false, "Unknown Box2D body type!");
+		return b2_staticBody;
+	}
 
 	Scene::Scene()
 	{}
@@ -34,10 +52,51 @@ namespace Milky {
 		m_Registry.destroy(entity);
 	}
 
+	void Scene::OnRuntimeStart()
+	{
+		m_PhysicsWorld = new b2World({ 0.0f, -9.8f });
+		auto view = m_Registry.view<RigidBody2DComponent>();
+		for (auto e : view)
+		{
+			Entity entity = { e, this };
+			auto& tc = entity.Transform();
+			auto& rb2dc = entity.GetComponent<RigidBody2DComponent>();
+
+			b2BodyDef bodyDef;
+			bodyDef.type = MilkyRigidBodyTypeToBox2D(rb2dc.Type);
+			bodyDef.position.Set(tc.Translation.x, tc.Translation.y);
+			bodyDef.angle = tc.Rotation.z;
+			b2Body* body = m_PhysicsWorld->CreateBody(&bodyDef);
+			body->SetFixedRotation(rb2dc.FixedRotation);
+			rb2dc.RuntimeBody = body;
+
+			if (entity.HasComponent<BoxCollider2DComponent>())
+			{
+				auto& bc2dc = entity.GetComponent<BoxCollider2DComponent>();
+
+				b2PolygonShape boxShape;
+				boxShape.SetAsBox(bc2dc.Size.x * tc.Scale.x, bc2dc.Size.y * tc.Scale.y);
+
+				b2FixtureDef fixtureDef;
+				fixtureDef.shape = &boxShape;
+				fixtureDef.density = bc2dc.Density;
+				fixtureDef.friction = bc2dc.Friction;
+				fixtureDef.restitution = bc2dc.Restitution;
+				fixtureDef.restitutionThreshold = bc2dc.RestitutionThreshold;
+				body->CreateFixture(&fixtureDef);
+			}
+		}
+	}
+
+	void Scene::OnRuntimeStop()
+	{
+		delete m_PhysicsWorld;
+		m_PhysicsWorld = nullptr;
+	}
 
 	void Scene::OnUpdateRuntime(Timestep ts)
 	{
-		// Update entity scripts
+		// Scripts
 		{
 			m_Registry.view<NativeScriptComponent>().each([=](entt::entity entity, NativeScriptComponent& nsc)
 			{
@@ -49,20 +108,39 @@ namespace Milky {
 					nsc.Instance->OnCreate();
 				}
 
-				nsc.Instance->OnUpdateRuntime(ts);
+				nsc.Instance->OnUpdate(ts);
 				// TODO: Destroy scripts in Scene::OnSceneStop
 			});
 		}
 
-		// Render sprites
-		
+		// Physics
+		{
+			const int32_t velocityIterations = 6;
+			const int32_t positionIterations = 2;
+			m_PhysicsWorld->Step(ts, velocityIterations, positionIterations);
+
+			auto view = m_Registry.view<RigidBody2DComponent>();
+			for (auto e : view)
+			{
+				Entity entity = { e, this };
+				auto& tc = entity.Transform();
+				auto& rb2dc = entity.GetComponent<RigidBody2DComponent>();
+				b2Body* body = (b2Body*)rb2dc.RuntimeBody;
+				const auto& position = body->GetPosition();
+				tc.Translation.x = position.x;
+				tc.Translation.y = position.y;
+				tc.Rotation.z = body->GetAngle();
+			}
+		}
+
+		// Render 2D
 		Entity mainCameraEntity = GetPrimaryCameraEntity();
 		Camera* mainCamera = nullptr;
 		glm::mat4* cameraTransform = nullptr;
 		if (mainCameraEntity)
 		{
 			mainCamera = &mainCameraEntity.GetComponent<CameraComponent>().Camera;
-			cameraTransform = &mainCameraEntity.GetComponent<TransformComponent>().GetTransform();
+			cameraTransform = &mainCameraEntity.Transform().GetTransform();
 		}
 
 		if (mainCamera)
@@ -74,8 +152,7 @@ namespace Milky {
 			for (auto entity : group)
 			{
 				auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-
-				Renderer2D::DrawQuad(transform.GetTransform(), sprite.Color);
+				Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
 			}
 
 			Renderer2D::EndScene();
@@ -91,8 +168,7 @@ namespace Milky {
 		for (auto entity : group)
 		{
 			auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-
-			Renderer2D::DrawQuad(transform.GetTransform(), sprite.Color);
+			Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
 		}
 
 		Renderer2D::EndScene();
@@ -159,6 +235,14 @@ namespace Milky {
 
 	template<>
 	void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
+	{}
+
+	template<>
+	void Scene::OnComponentAdded<RigidBody2DComponent>(Entity entity, RigidBody2DComponent& component)
+	{}
+
+	template<>
+	void Scene::OnComponentAdded<BoxCollider2DComponent>(Entity entity, BoxCollider2DComponent& component)
 	{}
 
 }
