@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Milky/Scene/ScriptableEntity.h"
-
 namespace Milky {
+
+	class ScriptableEntity;
 
 	struct NativeScriptComponent
 	{

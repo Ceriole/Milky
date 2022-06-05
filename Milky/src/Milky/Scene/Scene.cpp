@@ -3,6 +3,7 @@
 
 #include "Components/Components.h"
 #include "Milky/Renderer/Renderer2D.h"
+#include "ScriptableEntity.h"
 
 #include <glm/glm.hpp>
 
@@ -34,22 +35,122 @@ namespace Milky {
 	Scene::~Scene()
 	{}
 
-	Entity Scene::CreateEmptyEntity()
+	template<typename Comp>
+	static void CopyComponent(entt::registry& dst, entt::registry& src, const std::unordered_map<UUID, entt::entity>& enttMap)
 	{
-		return { m_Registry.create(), this };
+		auto view = src.view<Comp>();
+		for (auto e : view)
+		{
+			UUID uuid = src.get<IDComponent>(e).ID;
+			ML_CORE_ASSERT(enttMap.find(uuid) != enttMap.end(), "Entity does not exist in copy map!");
+			entt::entity dstEnttID = enttMap.at(uuid);
+
+			auto& component = src.get<Comp>(e);
+			dst.emplace_or_replace<Comp>(dstEnttID, component);
+		}
 	}
 
-	Entity Scene::CreateEntity(const std::string& name)
+	template<typename Comp>
+	static void CopyComponentIfExists(Entity dst, Entity src)
 	{
-		Entity entity = CreateEmptyEntity();
+		if (src.HasComponent<Comp>())
+			dst.AddOrReplaceComponent<Comp>(src.GetComponent<Comp>());
+	}
+
+	Ref<Scene> Scene::Copy(const Ref<Scene> other)
+	{
+		Ref<Scene> newScene = CreateRef<Scene>();
+
+		newScene->m_ViewportWidth = other->m_ViewportWidth;
+		newScene->m_ViewportHeight = other->m_ViewportHeight;
+
+		std::unordered_map<UUID, entt::entity> enttMap;
+
+		auto& srcSceneRegistry = other->m_Registry;
+		auto& dstSceneRegistry = newScene->m_Registry;
+		auto idView = srcSceneRegistry.view<IDComponent>();
+		for (auto e : idView)
+		{
+			UUID uuid = srcSceneRegistry.get<IDComponent>(e).ID;
+			const std::string name = srcSceneRegistry.get<TagComponent>(e).Tag;
+			enttMap[uuid] = newScene->CreateEntity(uuid, name);
+		}
+
+		CopyComponent<TransformComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<SpriteRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<CameraComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<NativeScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<RigidBody2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<BoxCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+
+		return newScene;
+	}
+
+	Entity Scene::CreateEntity(UUID uuid, const std::string& name)
+	{
+		Entity entity = { m_Registry.create(), this };
+		entity.AddComponent<IDComponent>(uuid);
 		entity.AddComponent<TagComponent>(name.empty() ? "Unnamed Entity" : name);
 		entity.AddComponent<TransformComponent>();
 		return entity;
 	}
 
+	Entity Scene::CreateEntity(const std::string& name)
+	{
+		return CreateEntity(UUID(), name);
+	}
+
 	void Scene::DestroyEntity(Entity entity)
 	{
 		m_Registry.destroy(entity);
+	}
+
+	void Scene::DestroyEntities(const std::vector<Entity> entities)
+	{
+		for(Entity entity : entities)
+			m_Registry.destroy(entity);
+	}
+
+	void Scene::DuplicateEntity(Entity entity)
+	{
+		Entity newEntity = CreateEntity("copy of " + entity.GetName());
+		CopyComponentIfExists<TransformComponent>(newEntity, entity);
+		CopyComponentIfExists<SpriteRendererComponent>(newEntity, entity);
+		CopyComponentIfExists<CameraComponent>(newEntity, entity);
+		CopyComponentIfExists<NativeScriptComponent>(newEntity, entity);
+		CopyComponentIfExists<RigidBody2DComponent>(newEntity, entity);
+		CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
+	}
+
+	void Scene::DuplicateEntities(const std::vector<Entity> entities)
+	{
+		for (Entity entity : entities)
+			DuplicateEntity(entity);
+	}
+
+	Entity Scene::GetEntity(UUID uuid)
+	{
+		if (!uuid)
+			return {};
+		auto idView = m_Registry.view<IDComponent>();
+		for (auto e : idView)
+			if (m_Registry.get<IDComponent>(e).ID == uuid)
+				return { e, this };
+		return {};
+	}
+
+	const std::vector<Entity> Scene::GetEntities(const std::vector<UUID> uuids)
+	{
+		std::vector<Entity> result;
+		if (uuids.empty())
+			return result;
+		for (UUID uuid : uuids)
+		{
+			Entity entity = GetEntity(uuid);
+			if (entity)
+				result.push_back(entity);
+		}
+		return result;
 	}
 
 	void Scene::OnRuntimeStart()
@@ -59,7 +160,7 @@ namespace Milky {
 		for (auto e : view)
 		{
 			Entity entity = { e, this };
-			auto& tc = entity.Transform();
+			auto& tc = entity.GetTransform();
 			auto& rb2dc = entity.GetComponent<RigidBody2DComponent>();
 
 			b2BodyDef bodyDef;
@@ -123,7 +224,7 @@ namespace Milky {
 			for (auto e : view)
 			{
 				Entity entity = { e, this };
-				auto& tc = entity.Transform();
+				auto& tc = entity.GetTransform();
 				auto& rb2dc = entity.GetComponent<RigidBody2DComponent>();
 				b2Body* body = (b2Body*)rb2dc.RuntimeBody;
 				const auto& position = body->GetPosition();
@@ -140,7 +241,7 @@ namespace Milky {
 		if (mainCameraEntity)
 		{
 			mainCamera = &mainCameraEntity.GetComponent<CameraComponent>().Camera;
-			cameraTransform = &mainCameraEntity.Transform().GetTransform();
+			cameraTransform = &mainCameraEntity.GetTransform().GetTransform();
 		}
 
 		if (mainCamera)
@@ -213,6 +314,10 @@ namespace Milky {
 	{
 		static_assert(false);
 	}
+
+	template<>
+	void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent& component)
+	{}
 
 	template<>
 	void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)

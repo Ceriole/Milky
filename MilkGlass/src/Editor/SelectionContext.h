@@ -15,38 +15,42 @@ namespace Milky {
 		Any = 255
 	};
 
+	struct EditorContext;
+
 	class SelectionContext
 	{
 	public:
-		SelectionContext();
-		SelectionContext(const SelectionContext& context);
+		SelectionContext(const Ref<EditorContext>& context);
+		SelectionContext(const SelectionContext& context) = default;
 		~SelectionContext() = default;
 
 		bool Empty() const;
 		bool Has(const SelectionType type = SelectionType::Any) const;
-		bool Has(const Entity entity) const;
-		bool Has(const std::vector<Entity>& entities) const;
+		bool Has(const UUID uuid) const;
+		bool Has(const std::vector<UUID>& uuids) const;
+
 		bool CanSelect(const SelectionType type) const;
 
 		size_t Count(const SelectionType type = SelectionType::Any) const;
 
 		void Clear(const SelectionType type = SelectionType::Any);
 
-		bool Set(const Entity entity);
-		bool Add(const Entity entity);
-		bool Add(const std::vector<Entity>& entities);
+		bool Set(const UUID entity);
+		bool Add(const UUID uuid);
+		bool Add(const std::vector<UUID>& entities);
 
-		bool Remove(const Entity entity);
-		bool Remove(const std::vector<Entity>& entities);
+		bool Remove(const UUID uuid);
+		bool Remove(const std::vector<UUID>& uuid);
 
-		bool Toggle(const Entity entity);
+		bool Toggle(const UUID uuid);
 
-		const Entity GetEntity() const;
-		const std::vector<Entity> GetEntities() const;
+		const UUID Get() const;
+		const std::vector<UUID> GetAll() const;
 
 		SelectionType Type() const { return m_Type; };
 	private:
-		std::vector<Entity> m_SelectedEntities;
+		Ref<EditorContext> m_Context;
+		std::vector<UUID> m_Selected;
 		SelectionType m_Type;
 	};
 

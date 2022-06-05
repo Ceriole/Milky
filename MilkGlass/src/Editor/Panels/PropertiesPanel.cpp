@@ -15,12 +15,12 @@ namespace Milky {
 		if (m_Context->Selection->Count(SelectionType::Entity) == 1)
 		{
 			bool entityDeleted = false;
-			Entity selectedEntity = m_Context->Selection->GetEntity();
-			EditorUtils::ShowEntityHeader(selectedEntity, entityDeleted);
-			EditorUtils::ShowComponents(selectedEntity);
+			Entity selectedEntity = m_Context->ActiveScene->GetEntity(m_Context->Selection->Get());
+			EditorUtils::ShowEntityHeader(m_Context, selectedEntity, entityDeleted);
+			EditorUtils::ShowComponents(m_Context, selectedEntity);
 			if (entityDeleted)
 			{
-				m_Context->Selection->Remove(selectedEntity);
+				m_Context->Selection->Remove(selectedEntity.GetUUID());
 				m_Context->ActiveScene->DestroyEntity(selectedEntity);
 			}
 		}
@@ -31,7 +31,7 @@ namespace Milky {
 		}
 		else
 		{
-			constexpr const char* noSelectionText = "No Entity Selected!\nSelect an entity in the Scene Hierarchy.";
+			constexpr const char* noSelectionText = "No Entity Selected!\n\nSelect an entity in the\nScene Hierarchy or the viewport.";
 			ImVec2 windowSize = ImGui::GetWindowSize();
 			ImVec2 textSize = ImGui::CalcTextSize(noSelectionText);
 			ImVec2 textPos = ImVec2{ (windowSize.x - textSize.x) * 0.5f , (windowSize.y - textSize.y) * 0.5f };

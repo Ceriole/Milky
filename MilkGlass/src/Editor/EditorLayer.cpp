@@ -25,7 +25,7 @@ namespace Milky {
 
 		m_Context = CreateRef<EditorContext>();
 
-		m_Context->Selection = CreateRef<SelectionContext>();
+		m_Context->Selection = CreateRef<SelectionContext>(m_Context);
 
 		FramebufferSpecification fbSpec;
 		fbSpec.Attachments = { FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::RED_INTEGER, FrameBufferTextureFormat::Depth };
@@ -80,13 +80,13 @@ namespace Milky {
 
 		switch (m_Context->State)
 		{
-			case SceneState::Edit:
+			case EditorState::Edit:
 			{
 				m_Context->Camera->OnUpdate(ts);
 				m_Context->ActiveScene->OnUpdateEditor(ts, *m_Context->Camera);
 				break;
 			}
-			case SceneState::Play:
+			case EditorState::Play:
 			{
 				m_Context->ActiveScene->OnUpdateRuntime(ts);
 				break;
@@ -226,7 +226,7 @@ namespace Milky {
 	{
 		if (ImGui::BeginMenu("Scene"))
 		{
-			EditorUtils::ShowNewEntityMenu(m_Context->ActiveScene);
+			EditorUtils::ShowNewEntityMenu(m_Context);
 			ImGui::EndMenu();
 		}
 	}
@@ -325,8 +325,6 @@ namespace Milky {
 		}
 	}
 
-	
-
 	void EditorLayer::OnEvent(Event& e)
 	{
 		m_Context->Camera->OnEvent(e);
@@ -373,6 +371,14 @@ namespace Milky {
 				Application::Get().Close();
 			else
 				m_PropertiesPanel->ToggleOpen();
+			break;
+		case Key::Delete:
+			if (m_Context->Selection->Has(SelectionType::Entity) && m_Context->State == EditorState::Edit)
+			{
+				std::vector<UUID> uuids = m_Context->Selection->GetAll();
+				m_Context->Selection->Remove(uuids);
+				m_Context->ActiveScene->DestroyEntities(m_Context->ActiveScene->GetEntities(uuids));
+			}
 			break;
 		}
 

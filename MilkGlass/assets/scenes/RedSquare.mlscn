@@ -1,6 +1,16 @@
 Scene: Untitled
 Entities:
-  - Entity: 1234567891234
+  - Entity: 7303581932583469298
+    TagComponent:
+      Tag: New Entity
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [1, 0, 0, 1]
+      TilingFactor: 1
+  - Entity: 16489253921795960828
     TagComponent:
       Tag: New Camera
     TransformComponent:
@@ -18,13 +28,3 @@ Entities:
         OrthographicFar: 1
       Primary: true
       FixedAspectRatio: false
-  - Entity: 1234567891234
-    TagComponent:
-      Tag: New Entity
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    SpriteRendererComponent:
-      Color: [1, 0, 0, 1]
-      TilingFactor: 1

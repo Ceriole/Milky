@@ -28,13 +28,13 @@ namespace Milky {
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, buttonHovered.w * 0.5f));
 
 		float size = ImGui::GetContentRegionAvail().y;
-		Ref<Texture2D> icon = m_Context->State == SceneState::Edit ? m_IconPlay : m_IconStop;
+		Ref<Texture2D> icon = m_Context->State == EditorState::Edit ? m_IconPlay : m_IconStop;
 		ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
 		if (ImGui::ImageButton((ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0))
 		{
-			if (m_Context->State == SceneState::Edit)
+			if (m_Context->State == EditorState::Edit)
 				m_Context->OnScenePlay();
-			else if (m_Context->State == SceneState::Play)
+			else if (m_Context->State == EditorState::Play)
 				m_Context->OnSceneStop();
 		}
 

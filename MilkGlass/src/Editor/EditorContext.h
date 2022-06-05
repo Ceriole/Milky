@@ -13,7 +13,7 @@
 
 namespace Milky {
 
-	enum class SceneState
+	enum class EditorState
 	{
 		Edit = 0,
 		Play = 1,
@@ -25,16 +25,16 @@ namespace Milky {
 	{
 	public:
 		Ref<Scene> ActiveScene;
+		Ref<Scene> EditorScene, RuntimeScene;
 		Ref<SelectionContext> Selection;
 		Ref<EditorCamera> Camera;
 		Ref<Framebuffer> Framebuffer;
 		Entity HoveredEntity;
-		SceneState State;
+		EditorState State;
 		int GizmoType = -1;
 		int GizmoMode = 0;
 
 	public:
-		void CreateEmptyScene();
 		void NewScene();
 		void OpenScene(const std::filesystem::path& path);
 		void SaveScene(const std::filesystem::path& path = std::string());
@@ -45,12 +45,17 @@ namespace Milky {
 		void OnScenePlay();
 		void OnSceneStop();
 
-		bool SelectEntity(Entity entity);
+		bool Select(Entity uuid);
 		
 		const std::filesystem::path ActivePath() const { return m_ActivePath; };
 		const std::vector<std::filesystem::path> RecentPaths() const { return m_RecentPaths; };
 		const glm::vec2 ViewportSize() const { return m_ViewportSize; };
 		void SetViewportSize(const glm::vec2& viewportSize);
+
+		SelectionType GetTypeOfUUID(UUID uuid) const;
+		bool IsSameType(const std::vector<UUID>& uuids) const;
+	private:
+		void SetScene(Ref<Scene> scene);
 	private:
 		std::vector<std::filesystem::path> m_RecentPaths;
 		std::filesystem::path m_ActivePath;

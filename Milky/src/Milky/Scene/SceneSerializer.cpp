@@ -260,7 +260,8 @@ namespace Milky {
 		YAML::Node tcData = entityData["TagComponent"];
 		if (tcData)
 		{
-			entity.AddComponent<TagComponent>(tcData["Tag"].as<std::string>());
+			TagComponent& tc = entity.GetComponent<TagComponent>();
+			tc.Tag = tcData["Tag"].as<std::string>();
 			return true;
 		}
 		return false;
@@ -272,7 +273,7 @@ namespace Milky {
 		YAML::Node tcData = entityData["TransformComponent"];
 		if (tcData)
 		{
-			TransformComponent& tc = entity.AddComponent<TransformComponent>();
+			TransformComponent& tc = entity.GetComponent<TransformComponent>();
 			tc.Translation = tcData["Translation"].as<glm::vec3>();
 			tc.Rotation = tcData["Rotation"].as<glm::vec3>();
 			tc.Scale = tcData["Scale"].as<glm::vec3>();
@@ -359,7 +360,7 @@ namespace Milky {
 	static void SerializeEntity(YAML::Emitter& out, Entity entity)
 	{
 		out << YAML::BeginMap; // Entity
-		out << YAML::Key << "Entity" << YAML::Value << 1234567891234U; // TODO: Entity ID
+		out << YAML::Key << "Entity" << YAML::Value << entity.GetUUID(); // TODO: Entity ID
 
 		SerializeComponent<TagComponent>(out, entity);
 		SerializeComponent<TransformComponent>(out, entity);
@@ -373,21 +374,16 @@ namespace Milky {
 
 	static bool DeserializeEntity(YAML::Node entityData, Entity entity)
 	{
-		uint64_t uuid = entityData["Entity"].as<uint64_t>(); // TODO
-
-		if (!DeserializeComponent<TagComponent>(entityData, entity))
-		{
-			ML_CORE_WARN("Entity does not have TagComponent!");
-			return false;
-		}
-		ML_CORE_TRACE("Deserializing entity '{0}' ({1})", entity.Tag(), uuid);
+		bool result = true;
+		result &= DeserializeComponent<TagComponent>(entityData, entity);
+		ML_CORE_TRACE("Deserializing entity '{0}' ({1})", entity.GetName(), entity.GetUUID());
 		DeserializeComponent<TransformComponent>(entityData, entity);
 		DeserializeComponent<CameraComponent>(entityData, entity);
 		DeserializeComponent<SpriteRendererComponent>(entityData, entity);
 		DeserializeComponent<RigidBody2DComponent>(entityData, entity);
 		DeserializeComponent<BoxCollider2DComponent>(entityData, entity);
 
-		return true;
+		return result;
 	}
 
 	void SceneSerializer::Serialize(const std::string & filepath)
@@ -448,7 +444,8 @@ namespace Milky {
 		{
 			for (YAML::Node entityData : entityArrayData)
 			{
-				Entity entity = m_Scene->CreateEmptyEntity();
+				uint64_t uuid = entityData["Entity"].as<uint64_t>();
+				Entity entity = m_Scene->CreateEntity(uuid);
 				if (!DeserializeEntity(entityData, entity))
 					m_Scene->DestroyEntity(entity);
 			}

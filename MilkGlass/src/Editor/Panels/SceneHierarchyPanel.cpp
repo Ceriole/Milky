@@ -27,7 +27,7 @@ namespace Milky {
 
 		if (ImGui::BeginPopupContextWindow(NULL, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
 		{
-			EditorUtils::ShowNewEntityMenu(m_Context->ActiveScene);
+			EditorUtils::ShowNewEntityMenu(m_Context);
 			ImGui::EndPopup();
 		}
 	}
@@ -36,15 +36,16 @@ namespace Milky {
 	{
 		auto& tag = entity.GetComponent<TagComponent>().Tag;
 
-		ImGuiTreeNodeFlags flags = (m_Context->Selection->Has(entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+		ImGuiTreeNodeFlags flags = (m_Context->Selection->Has(entity.GetUUID()) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 		bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, flags, tag.c_str());
 		if (ImGui::IsMouseClicked(0) && ImGui::IsItemHovered())
-			m_Context->SelectEntity(entity);
+			m_Context->Select(entity);
 
 		bool entityDeleted = false;
 		if (ImGui::BeginPopupContextItem())
 		{
-			EditorUtils::ShowEntityMenuItems(entity, entityDeleted);
+			if (m_Context->Selection->Count(SelectionType::Entity) == 0 || m_Context->Selection->Has(entity.GetUUID()))
+				EditorUtils::ShowEntityMenuItems(m_Context, entity, entityDeleted);
 			ImGui::EndPopup();
 		}
 
@@ -60,7 +61,7 @@ namespace Milky {
 
 		if (entityDeleted)
 		{
-			m_Context->Selection->Remove(entity);
+			m_Context->Selection->Remove(entity.GetUUID());
 			m_Context->ActiveScene->DestroyEntity(entity);
 		}
 	}

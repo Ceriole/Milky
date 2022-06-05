@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Milky/Core/UUID.h"
 #include "Milky/Core/Timestep.h"
 #include "Milky/Renderer/EditorCamera.h"
 
@@ -16,13 +17,22 @@ namespace Milky {
 		friend class SceneSerializer;
 		friend class SceneHierarchyPanel;
 	public:
-		Scene(const Scene& scene) = default;
 		Scene();
 		~Scene();
 
-		Entity CreateEmptyEntity();
+		static Ref<Scene> Copy(const Ref<Scene> other);
+
+		Entity CreateEntity(UUID uuid, const std::string& name = std::string());
 		Entity CreateEntity(const std::string& name = std::string());
+
 		void DestroyEntity(Entity entity);
+		void DestroyEntities(const std::vector<Entity> entities);
+
+		void DuplicateEntity(Entity entity);
+		void DuplicateEntities(const std::vector<Entity> entities);
+
+		Entity GetEntity(UUID uuid);
+		const std::vector<Entity> GetEntities(const std::vector<UUID> uuids);
 
 		void OnRuntimeStart();
 		void OnRuntimeStop();

@@ -7,27 +7,31 @@
 
 namespace Milky {
 
-	void EditorContext::CreateEmptyScene()
+	void EditorContext::SetScene(Ref<Scene> scene)
 	{
-		ActiveScene = CreateRef<Scene>();
+		EditorScene = scene;
 		Camera = CreateRef<EditorCamera>(30.0f, 1.78f, 0.1f, 1000.0f);
-		Selection = CreateRef<SelectionContext>();
+		Selection->Clear();
 		HoveredEntity = {};
-		State = SceneState::Edit;
+		State = EditorState::Edit;
 		GizmoType = -1;
 		GizmoMode = 0;
 
 		if (m_ViewportSize.x && m_ViewportSize.y)
 		{
-			ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			EditorScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 			Camera->SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
 		}
+
+		SetActiveFilepath("");
+
+		ActiveScene = scene;
 	}
 
 	void EditorContext::NewScene()
 	{
-		CreateEmptyScene();
-		SetActiveFilepath("");
+		Ref<Scene> newScene = CreateRef<Scene>();
+		SetScene(newScene);
 	}
 
 	void EditorContext::OpenScene(const std::filesystem::path& path)
@@ -39,15 +43,20 @@ namespace Milky {
 				ML_WARN("Could not load '{0}' - Not a scene file.", path.filename().string());
 				return;
 			}
-			CreateEmptyScene();
-			SceneSerializer serializer(ActiveScene);
+			Ref<Scene> newScene = CreateRef<Scene>();
+			SceneSerializer serializer(newScene);
 			if (serializer.Deserialize(path.string()))
+			{
+				SetScene(newScene);
 				SetActiveFilepath(path);
+			}
 		}
 	}
 
 	void EditorContext::SaveScene(const std::filesystem::path& path)
 	{
+		if (State != EditorState::Edit)
+			return;
 		SceneSerializer serializer(ActiveScene);
 		if (!path.empty())
 		{
@@ -92,17 +101,17 @@ namespace Milky {
 		Application::Get().GetWindow().SetTitle("MilkGlass - " + (m_ActivePath.empty() ? "Unsaved Scene" : m_ActivePath.string()));
 	}
 
-	bool EditorContext::SelectEntity(Entity entity)
+	bool EditorContext::Select(Entity entity)
 	{
 		if (Input::IsCtrlDown())
 		{
-			if (entity && Selection->CanSelect(SelectionType::Entity))
-				return Selection->Toggle(entity);
+			if (entity)
+				return Selection->Toggle(entity.GetUUID());
 		}
 		else
 		{
 			if (entity)
-				return Selection->Set(entity);
+				return Selection->Set(entity.GetUUID());
 			else
 				Selection->Clear();
 		}
@@ -124,16 +133,45 @@ namespace Milky {
 
 	void EditorContext::OnScenePlay()
 	{
-		State = SceneState::Play;
-		ActiveScene->OnRuntimeStart();
 		m_TempGizmoType = GizmoType;
 		GizmoType = -1;
+		
+		State = EditorState::Play;
+
+		ActiveScene = Scene::Copy(EditorScene);
+		ActiveScene->OnRuntimeStart();
 	}
 
 	void EditorContext::OnSceneStop()
 	{
 		ActiveScene->OnRuntimeStop();
-		State = SceneState::Edit;
+		ActiveScene = EditorScene;
+		
+		State = EditorState::Edit;
 		GizmoType = m_TempGizmoType;
 	}
+
+	SelectionType EditorContext::GetTypeOfUUID(UUID uuid) const
+	{
+		if (ActiveScene->GetEntity(uuid)) return SelectionType::Entity;
+		// TODO: Other selection types
+		return SelectionType::None;
+	}
+
+	bool EditorContext::IsSameType(const std::vector<UUID>& uuids) const
+	{
+		if(uuids.empty())
+			return false;
+		SelectionType type = SelectionType::None;
+		for (UUID uuid : uuids)
+		{
+			if (type == SelectionType::None)
+				type = GetTypeOfUUID(uuid);
+			else
+				if (GetTypeOfUUID(uuid) != type)
+					return false;
+		}
+		return true;
+	}
+
 }

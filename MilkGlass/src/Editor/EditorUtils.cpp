@@ -19,28 +19,29 @@ namespace Milky {
 
 	namespace EditorUtils {
 
-		void ShowNewEntityMenu(const Ref<Scene>& scene)
+		void ShowNewEntityMenu(const Ref<EditorContext>& context)
 		{
+			ImGui::BeginDisabled(context->State != EditorState::Edit);
 			if (ImGui::BeginMenu("New Entity"))
 			{
 				if (ImGui::MenuItem("Empty"))
-					scene->CreateEntity("New Entity");
+					context->ActiveScene->CreateEntity("New Entity");
 				if (ImGui::MenuItem("Square"))
 				{
-					Entity entity = scene->CreateEntity("New Square");
+					Entity entity = context->ActiveScene->CreateEntity("New Square");
 					entity.AddComponent<SpriteRendererComponent>();
 				}
 				if (ImGui::BeginMenu("Camera"))
 				{
 					if (ImGui::MenuItem("Orthographic"))
 					{
-						Entity entity = scene->CreateEntity("New Camera");
+						Entity entity = context->ActiveScene->CreateEntity("New Camera");
 						auto& cam = entity.AddComponent<CameraComponent>();
 						cam.Primary = false;
 					}
 					if (ImGui::MenuItem("Perspective"))
 					{
-						Entity entity = scene->CreateEntity("New Camera");
+						Entity entity = context->ActiveScene->CreateEntity("New Camera");
 						auto& cam = entity.AddComponent<CameraComponent>();
 						cam.Camera.SetProjectionType(SceneCamera::ProjectionType::Perspective);
 						cam.Primary = false;
@@ -49,16 +50,32 @@ namespace Milky {
 				}
 				ImGui::EndMenu();
 			}
+			ImGui::EndDisabled();
 		}
 
-		void ShowEntityMenuItems(Entity entity, bool& entityDeleted)
+		void ShowEntityMenuItems(const Ref<EditorContext>& context, Entity entity, bool& entityDeleted)
 		{
-			if (ImGui::MenuItemEx("Delete Entity", ICON_FA_TRASH))
+			ImGui::BeginDisabled(context->State != EditorState::Edit);
+			if (ImGui::MenuItemEx("Duplicate", ICON_FA_CLONE))
+				context->ActiveScene->DuplicateEntity(entity);
+			if (ImGui::MenuItemEx("Delete", ICON_FA_TRASH))
 				entityDeleted = true;
+			ImGui::EndDisabled();
 		}
 
-		void ShowAddComponentMenuItems(Entity entity)
+		void ShowMultiEntityMenuItems(const Ref<EditorContext>& context, bool& entitiesDeleted)
 		{
+			ImGui::BeginDisabled(context->State != EditorState::Edit);
+			if (ImGui::MenuItemEx("Duplicate All", ICON_FA_CLONE))
+				context->ActiveScene->DuplicateEntities(context->ActiveScene->GetEntities(context->Selection->GetAll()));
+			if (ImGui::MenuItemEx("Delete All", ICON_FA_TRASH))
+				entitiesDeleted = true;
+			ImGui::EndDisabled();
+		}
+
+		void ShowAddComponentMenuItems(const Ref<EditorContext>& context, Entity entity)
+		{
+			ImGui::BeginDisabled(context->State != EditorState::Edit);
 			if (ImGui::MenuItem("Camera", NULL, false, !entity.HasComponent<CameraComponent>()))
 			{
 				if (!entity.HasComponent<CameraComponent>())
@@ -91,9 +108,10 @@ namespace Milky {
 					ML_CORE_WARN("This entity already has a Box Collider 2D Component!");
 				ImGui::CloseCurrentPopup();
 			}
+			ImGui::EndDisabled();
 		}
 
-		void ShowEntityHeader(Entity entity, bool& entityDeleted)
+		void ShowEntityHeader(const Ref<EditorContext>& context, Entity entity, bool& entityDeleted)
 		{
 			const float itemSpacing = ImGui::GetStyle().ItemSpacing.x;
 			const ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
@@ -113,32 +131,36 @@ namespace Milky {
 			}
 			float pos = contextButtonWidth * 0.5f;
 			ImGui::SameLine(contentRegionAvailable.x - pos);
+			ImGui::BeginDisabled(context->State != EditorState::Edit);
 			if (ImGui::Button("..."))
 				ImGui::OpenPopup("ComponentContextMenu");
+			ImGui::EndDisabled();
 			contextButtonWidth = ImGui::GetItemRectSize().x;
 
 			if (ImGui::BeginPopup("ComponentContextMenu"))
 			{
-				ShowEntityMenuItems(entity, entityDeleted);
+				ShowEntityMenuItems(context, entity, entityDeleted);
 				ImGui::EndPopup();
 			}
 
 			pos += addComponentButtonWidth + itemSpacing;
 			ImGui::SameLine(contentRegionAvailable.x - pos);
+			ImGui::BeginDisabled(context->State != EditorState::Edit);
 			if (ImGui::Button("Add Component"))
 				ImGui::OpenPopup("AddComponent");
 			addComponentButtonWidth = ImGui::GetItemRectSize().x;
+			ImGui::EndDisabled();
 
 			if (ImGui::BeginPopup("AddComponent"))
 			{
-				ShowAddComponentMenuItems(entity);
+				ShowAddComponentMenuItems(context, entity);
 				ImGui::EndPopup();
 			}
 		}
 
-		void ShowComponents(Entity entity)
+		void ShowComponents(const Ref<EditorContext>& context, Entity entity)
 		{
-			ShowComponent<TransformComponent>(ICON_FA_EXPAND_ARROWS_ALT " Transform", entity, [](TransformComponent& component)
+			ShowComponent<TransformComponent>(context, ICON_FA_EXPAND_ARROWS_ALT " Transform", entity, [](TransformComponent& component)
 				{
 					UIControls::ShowXYZControl("Translation", component.Translation);
 					glm::vec3 rotation = glm::degrees(component.Rotation);
@@ -147,7 +169,7 @@ namespace Milky {
 					UIControls::ShowXYZControl("Scale", component.Scale, 1.0f);
 				}, false);
 
-			ShowComponent<CameraComponent>(ICON_FA_VIDEO " Camera", entity, [](CameraComponent& component)
+			ShowComponent<CameraComponent>(context, ICON_FA_VIDEO " Camera", entity, [](CameraComponent& component)
 				{
 					auto& camera = component.Camera;
 
@@ -194,7 +216,7 @@ namespace Milky {
 					}
 				});
 
-			ShowComponent<SpriteRendererComponent>(ICON_FA_IMAGES " Sprite Renderer", entity, [](SpriteRendererComponent& component)
+			ShowComponent<SpriteRendererComponent>(context, ICON_FA_IMAGES " Sprite Renderer", entity, [](SpriteRendererComponent& component)
 				{
 					// TODO: Textures and materials
 					UIControls::ShowColorControl("Color", component.Color);
@@ -212,7 +234,7 @@ namespace Milky {
 					UIControls::ShowFloatControl("Tiling Factor", &component.TilingFactor);
 				});
 
-			ShowComponent<RigidBody2DComponent>(ICON_FA_OBJECT_GROUP " Rigid Body 2D", entity, [](RigidBody2DComponent& component)
+			ShowComponent<RigidBody2DComponent>(context, ICON_FA_OBJECT_GROUP " Rigid Body 2D", entity, [](RigidBody2DComponent& component)
 				{
 					int bodyType = (int)component.Type;
 					if (UIControls::ShowComboControl("Type", { "Static", "Dynamic", "Kinematic" }, bodyType))
@@ -220,7 +242,7 @@ namespace Milky {
 					UIControls::ShowBoolControl("Fixed Rotation", &component.FixedRotation);
 				});
 
-			ShowComponent<BoxCollider2DComponent>(ICON_FA_VECTOR_SQUARE " Box Collider 2D", entity, [](BoxCollider2DComponent& component)
+			ShowComponent<BoxCollider2DComponent>(context, ICON_FA_VECTOR_SQUARE " Box Collider 2D", entity, [](BoxCollider2DComponent& component)
 				{
 					UIControls::ShowXYControl("Offset", component.Offset);
 					UIControls::ShowXYControl("Size", component.Size, 0.5f);
@@ -243,7 +265,7 @@ namespace Milky {
 		}
 
 		template<typename Comp, typename UIFunction>
-		void ShowComponent(const std::string& name, Entity entity, UIFunction uiFunction, bool deleteable)
+		void ShowComponent(const Ref<EditorContext>& context, const std::string& name, Entity entity, UIFunction uiFunction, bool deleteable)
 		{
 			const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
 			if (entity.HasComponent<Comp>())
@@ -257,10 +279,12 @@ namespace Milky {
 				bool open = ImGui::TreeNodeEx((void*)typeid(Comp).hash_code(), treeNodeFlags, name.c_str());
 				ImGui::PopStyleVar();
 				ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
+				ImGui::BeginDisabled(context->State != EditorState::Edit);
 				if (ImGui::Button(ICON_FA_SLIDERS_H, ImVec2{ lineHeight, lineHeight }))
 				{
 					ImGui::OpenPopup("ComponentSettings");
 				}
+				ImGui::EndDisabled();
 
 				bool removeComponent = false;
 				if (ImGui::BeginPopup("ComponentSettings"))

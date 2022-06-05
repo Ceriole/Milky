@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Milky/Core/UUID.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -7,6 +9,14 @@
 #include <glm/gtx/quaternion.hpp>
 
 namespace Milky {
+
+	struct IDComponent
+	{
+		UUID ID;
+
+		IDComponent() = default;
+		IDComponent(const IDComponent&) = default;
+	};
 
 	struct TagComponent
 	{

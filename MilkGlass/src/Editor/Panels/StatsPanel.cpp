@@ -57,10 +57,12 @@ namespace Milky {
 
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
-				if (m_Context->Selection->Count() > 1)
+
+				if (m_Context->Selection->Count(SelectionType::Entity) > 1)
 					ImGui::Text("Selected Entities");
 				else
 					ImGui::Text("Selected Entity");
+
 				ImGui::TableNextColumn();
 				if (m_Context->Selection->Has())
 				{
@@ -68,10 +70,11 @@ namespace Milky {
 					switch (m_Context->Selection->Type())
 					{
 					case SelectionType::Entity:
-						auto entities = m_Context->Selection->GetEntities();
+						auto entities = m_Context->ActiveScene->GetEntities(m_Context->Selection->GetAll());
 						for (auto& entity : entities)
-							selectedText += entity.Tag() + (entities.back() != entity ? ", " : "");
+							selectedText += entity.GetName() + (entities.back() != entity ? ", " : "");
 						break;
+						// TODO: Other selection types
 					}
 					ImGui::Text(selectedText.c_str());
 				}
@@ -83,7 +86,7 @@ namespace Milky {
 				ImGui::Text("Hovered Entity");
 				ImGui::TableNextColumn();
 				if (m_Context->HoveredEntity)
-					ImGui::Text(m_Context->HoveredEntity.Tag().c_str());
+					ImGui::Text(m_Context->HoveredEntity.GetName().c_str());
 				else
 					ImGui::TextDisabled("None");
 				ImGui::EndTable();

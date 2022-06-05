@@ -1,21 +1,16 @@
 #include "SelectionContext.h"
 
+#include "EditorContext.h"
+
 namespace Milky {
 
-	SelectionContext::SelectionContext()
-	{
-		m_Type = SelectionType::None;
-	}
-
-	SelectionContext::SelectionContext(const SelectionContext& context)
-	{
-		m_SelectedEntities = context.m_SelectedEntities;
-		m_Type = context.m_Type;
-	}
+	SelectionContext::SelectionContext(const Ref<EditorContext>& context)
+		: m_Context(context), m_Type(SelectionType::None)
+	{}
 
 	bool SelectionContext::Empty() const
 	{
-		return m_Type != SelectionType::None;
+		return m_Type == SelectionType::None;
 	}
 
 	bool SelectionContext::Has(const SelectionType type) const
@@ -25,137 +20,111 @@ namespace Milky {
 		return m_Type == type;
 	}
 
-	bool SelectionContext::Has(const Entity entity) const
+	bool SelectionContext::Has(const UUID uuid) const
 	{
-		if (m_Type != SelectionType::Entity || !entity)
+		if (!uuid)
 			return false;
-		for (auto& selectedEntity : m_SelectedEntities)
-			if (selectedEntity == entity)
+		for (auto& selectedUUID : m_Selected)
+			if (selectedUUID == uuid)
 				return true;
 		return false;
 	}
 
-	bool SelectionContext::Has(const std::vector<Entity>& entities) const
+	bool SelectionContext::Has(const std::vector<UUID>& uuids) const
 	{
-		if (m_Type != SelectionType::Entity || entities.empty())
+		if (uuids.empty())
 			return false;
 		int selected = 0;
-		for (auto& entity : entities)
-			for (auto& selectedEntity : m_SelectedEntities)
-				if (entity == selectedEntity)
-					selected++;
-		return selected == entities.size();
+		for (UUID uuid : uuids)
+			if(Has(uuid))
+				selected++;
+		return selected == uuids.size();
 	}
 
 	bool SelectionContext::CanSelect(const SelectionType type) const
 	{
-		if (type == SelectionType::Any)
-			return m_Type == SelectionType::None;
-		return m_Type == SelectionType::None || m_Type == type;
+		return type == SelectionType::Any ? m_Type == SelectionType::None : m_Type == SelectionType::None || m_Type == type;
 	}
 
 	size_t SelectionContext::Count(const SelectionType type) const
 	{
-		switch (m_Type)
-		{
-		case SelectionType::Entity:
-			return m_SelectedEntities.size();
-		case SelectionType::Asset:
-			return 0;
-		case SelectionType::AssetFolder:
-			return 0;
-		}
-		return 0;
+		return type == SelectionType::Any || type != m_Type ? 0 : m_Selected.size();
 	}
 
 	void SelectionContext::Clear(const SelectionType type)
 	{
-		switch (type)
-		{
-		case SelectionType::Any:
-			// all vectors
-			m_SelectedEntities.clear();
-			break;
-		case SelectionType::Entity:
-			m_SelectedEntities.clear();
-			break;
-		case SelectionType::Asset:
-			break;
-		case SelectionType::AssetFolder:
-			break;
-		}
+		if (type != SelectionType::Any && (type != m_Type || type == SelectionType::None))
+			return;
+		m_Selected.clear();
 		m_Type = SelectionType::None;
 	}
 
-	bool SelectionContext::Set(const Entity entity)
+	bool SelectionContext::Set(const UUID uuid)
 	{
-		if (!entity)
+		if (!uuid)
 			return false;
 		Clear();
-		return Add(entity);
+		return Add(uuid);
 	}
 
-	bool SelectionContext::Add(const Entity entity)
+	bool SelectionContext::Add(const UUID uuid)
 	{
-		if (!entity || !CanSelect(SelectionType::Entity) || Has(entity))
+		SelectionType type = m_Context->GetTypeOfUUID(uuid);
+		if (!uuid || !CanSelect(type) || Has(uuid))
 			return false;
-		m_SelectedEntities.push_back(entity);
-		m_Type = SelectionType::Entity;
+		m_Selected.push_back(uuid);
+		m_Type = type;
 		return true;
 	}
 
-	bool SelectionContext::Add(const std::vector<Entity>& entities)
+	bool SelectionContext::Add(const std::vector<UUID>& uuids)
 	{
-		if(entities.empty() || !CanSelect(SelectionType::Entity) || Has(entities))
+		if(uuids.empty() || !m_Context->IsSameType(uuids))
 			return false;
 		bool added = false;
-		for (auto& entity : entities)
-			added |= Add(entity);
-		return false;
+		for (auto& uuid : uuids)
+			added |= Add(uuid);
+		return added;
 	}
 
-	bool SelectionContext::Remove(Entity entity)
+	bool SelectionContext::Remove(UUID uuid)
 	{
-		if (!entity || !Has(entity))
+		if (!uuid || !Has(uuid))
 			return false;
-		m_SelectedEntities.erase(std::remove(m_SelectedEntities.begin(), m_SelectedEntities.end(), entity));
-		if (m_SelectedEntities.size() == 0)
+		m_Selected.erase(std::remove(m_Selected.begin(), m_Selected.end(), uuid));
+		if (m_Selected.size() == 0)
 			m_Type = SelectionType::None;
 		return true;
 	}
 
-	bool SelectionContext::Remove(const std::vector<Entity>& entities)
+	bool SelectionContext::Remove(const std::vector<UUID>& uuids)
 	{
-		if(entities.empty())
+		if(uuids.empty())
 			return false;
-		for (auto& entity : entities)
-			Remove(entity);
+		for (auto& uuid : uuids)
+			Remove(uuid);
 		return true;
 	}
 
-	bool SelectionContext::Toggle(const Entity entity)
+	bool SelectionContext::Toggle(const UUID uuid)
 	{
-		if (!entity || !CanSelect(SelectionType::Entity))
+		if (!uuid || !CanSelect(SelectionType::Entity))
 			return false;
-		if (Has(entity))
-			return Remove(entity);
+		if (Has(uuid))
+			return Remove(uuid);
 		else
-			return Add(entity);
+			return Add(uuid);
 	}
 
-	const Entity SelectionContext::GetEntity() const
+	const UUID SelectionContext::Get() const
 	{
-		if (m_Type != SelectionType::Entity)
-			return Entity{};
-		if (m_SelectedEntities.size() == 1)
-			return m_SelectedEntities.back();
-		return Entity{};
+		if (m_Type == SelectionType::None || m_Selected.empty())
+			return 0;
+		return m_Selected.back();
 	}
 
-	const std::vector<Entity> SelectionContext::GetEntities() const
+	const std::vector<UUID> SelectionContext::GetAll() const
 	{
-		if (m_Type != SelectionType::Entity)
-			return std::vector<Entity>();
-		return std::vector<Entity>(m_SelectedEntities);
+		return m_Selected;
 	}
 }

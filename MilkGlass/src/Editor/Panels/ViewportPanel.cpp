@@ -72,9 +72,10 @@ namespace Milky {
 		}
 
 		// Gizmos
-		Entity selectedEntity = m_Context->Selection->GetEntity();
-		if (selectedEntity && m_Context->GizmoType >= 0 && (m_Context->GizmoType & ~0x3FFF) == 0 && m_Context->GizmoMode >= 0 && m_Context->GizmoMode < 2)
+		// TODO: Move multiple entities
+		if (m_Context->Selection->Count(SelectionType::Entity) == 1 && m_Context->GizmoType >= 0 && (m_Context->GizmoType & ~0x3FFF) == 0 && m_Context->GizmoMode >= 0 && m_Context->GizmoMode < 2)
 		{
+			Entity selectedEntity = m_Context->ActiveScene->GetEntity(m_Context->Selection->Get());
 			ImGuizmo::SetOrthographic(false);
 			ImGuizmo::SetDrawlist();
 
@@ -151,7 +152,7 @@ namespace Milky {
 		if (e.GetMouseButton() == Mouse::ButtonLeft)
 		{
 			if (CanMousePick())
-				m_Context->SelectEntity(m_Context->HoveredEntity);
+				m_Context->Select(m_Context->HoveredEntity);
 		}
 		return false;
 	}
