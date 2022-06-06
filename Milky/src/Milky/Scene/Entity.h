@@ -51,14 +51,13 @@ namespace Milky {
 
 		size_t ComponentCount() const { return 0; }
 
-		const UUID GetUUID() const { return GetComponent<IDComponent>().ID; };
+		const UUID& GetUUID() const { return GetComponent<IDComponent>().ID; };
 		const std::string& GetName() const { return GetComponent<TagComponent>().Tag; };
 		TransformComponent& GetTransform() const { return GetComponent<TransformComponent>(); };
 
 		operator bool() const { return m_Handle != entt::null; }
 		operator entt::entity() const { return m_Handle; }
 		operator uint32_t() const { return (uint32_t)m_Handle; }
-
 
 		bool operator==(const Entity& other) const
 		{

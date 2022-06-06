@@ -215,6 +215,22 @@ namespace Milky {
 	}
 
 	template<>
+	static void SerializeComponent<CircleRendererComponent>(YAML::Emitter& out, Entity entity)
+	{
+		if (entity.HasComponent<CircleRendererComponent>())
+		{
+			out << YAML::Key << "CircleRendererComponent";
+			out << YAML::BeginMap; // CircleRendererComponent
+
+			CircleRendererComponent& crc = entity.GetComponent<CircleRendererComponent>();
+			out << YAML::Key << "Color" << YAML::Value << crc.Color;
+			out << YAML::Key << "Thickness" << YAML::Value << crc.Thickness;
+			out << YAML::Key << "Fade" << YAML::Value << crc.Fade;
+			out << YAML::EndMap; // CircleRendererComponent
+		}
+	}
+
+	template<>
 	static void SerializeComponent<RigidBody2DComponent>(YAML::Emitter& out, Entity entity)
 	{
 		if (entity.HasComponent<RigidBody2DComponent>())
@@ -241,12 +257,34 @@ namespace Milky {
 			BoxCollider2DComponent& bc2dc = entity.GetComponent<BoxCollider2DComponent>();
 			out << YAML::Key << "Offset" << YAML::Value << bc2dc.Offset;
 			out << YAML::Key << "Size" << YAML::Value << bc2dc.Size;
+
 			out << YAML::Key << "Density" << YAML::Value << bc2dc.Density;
 			out << YAML::Key << "Friction" << YAML::Value << bc2dc.Friction;
 			out << YAML::Key << "Restitution" << YAML::Value << bc2dc.Restitution;
 			out << YAML::Key << "RestitutionThreshold" << YAML::Value << bc2dc.RestitutionThreshold;
 
 			out << YAML::EndMap; // BoxCollider2DComponent
+		}
+	}
+
+	template<>
+	static void SerializeComponent<CircleCollider2DComponent>(YAML::Emitter& out, Entity entity)
+	{
+		if (entity.HasComponent<CircleCollider2DComponent>())
+		{
+			out << YAML::Key << "CircleCollider2DComponent";
+			out << YAML::BeginMap; // CircleCollider2DComponent
+
+			CircleCollider2DComponent& cc2dc = entity.GetComponent<CircleCollider2DComponent>();
+			out << YAML::Key << "Offset" << YAML::Value << cc2dc.Offset;
+			out << YAML::Key << "Radius" << YAML::Value << cc2dc.Radius;
+
+			out << YAML::Key << "Density" << YAML::Value << cc2dc.Density;
+			out << YAML::Key << "Friction" << YAML::Value << cc2dc.Friction;
+			out << YAML::Key << "Restitution" << YAML::Value << cc2dc.Restitution;
+			out << YAML::Key << "RestitutionThreshold" << YAML::Value << cc2dc.RestitutionThreshold;
+
+			out << YAML::EndMap; // CircleCollider2DComponent
 		}
 	}
 
@@ -326,6 +364,21 @@ namespace Milky {
 	}
 
 	template<>
+	static bool DeserializeComponent<CircleRendererComponent>(YAML::Node entityData, Entity entity)
+	{
+		YAML::Node& crcData = entityData["CircleRendererComponent"];
+		if (crcData)
+		{
+			CircleRendererComponent& src = entity.AddComponent<CircleRendererComponent>();
+			src.Color = crcData["Color"].as<glm::vec4>();
+			src.Thickness = crcData["Thickness"].as<float>();
+			src.Fade = crcData["Fade"].as<float>();
+			return true;
+		}
+		return false;
+	}
+
+	template<>
 	static bool DeserializeComponent<RigidBody2DComponent>(YAML::Node entityData, Entity entity)
 	{
 		YAML::Node& rb2dcData = entityData["RigidBody2DComponent"];
@@ -348,10 +401,32 @@ namespace Milky {
 			BoxCollider2DComponent& bc2dc = entity.AddComponent<BoxCollider2DComponent>();
 			bc2dc.Offset = bc2dcData["Offset"].as<glm::vec2>();
 			bc2dc.Size = bc2dcData["Size"].as<glm::vec2>();
+
 			bc2dc.Density = bc2dcData["Density"].as<float>();
 			bc2dc.Friction = bc2dcData["Friction"].as<float>();
 			bc2dc.Restitution = bc2dcData["Restitution"].as<float>();
 			bc2dc.RestitutionThreshold = bc2dcData["RestitutionThreshold"].as<float>();
+
+			return true;
+		}
+		return false;
+	}
+
+	template<>
+	static bool DeserializeComponent<CircleCollider2DComponent>(YAML::Node entityData, Entity entity)
+	{
+		YAML::Node& cc2dcData = entityData["CircleCollider2DComponent"];
+		if (cc2dcData)
+		{
+			CircleCollider2DComponent& cc2dc = entity.AddComponent<CircleCollider2DComponent>();
+			cc2dc.Offset = cc2dcData["Offset"].as<glm::vec2>();
+			cc2dc.Radius = cc2dcData["Radius"].as<float>();
+
+			cc2dc.Density = cc2dcData["Density"].as<float>();
+			cc2dc.Friction = cc2dcData["Friction"].as<float>();
+			cc2dc.Restitution = cc2dcData["Restitution"].as<float>();
+			cc2dc.RestitutionThreshold = cc2dcData["RestitutionThreshold"].as<float>();
+
 			return true;
 		}
 		return false;
@@ -366,8 +441,10 @@ namespace Milky {
 		SerializeComponent<TransformComponent>(out, entity);
 		SerializeComponent<CameraComponent>(out, entity);
 		SerializeComponent<SpriteRendererComponent>(out, entity);
+		SerializeComponent<CircleRendererComponent>(out, entity);
 		SerializeComponent<RigidBody2DComponent>(out, entity);
 		SerializeComponent<BoxCollider2DComponent>(out, entity);
+		SerializeComponent<CircleCollider2DComponent>(out, entity);
 
 		out << YAML::EndMap; // Entity
 	}
@@ -380,8 +457,10 @@ namespace Milky {
 		DeserializeComponent<TransformComponent>(entityData, entity);
 		DeserializeComponent<CameraComponent>(entityData, entity);
 		DeserializeComponent<SpriteRendererComponent>(entityData, entity);
+		DeserializeComponent<CircleRendererComponent>(entityData, entity);
 		DeserializeComponent<RigidBody2DComponent>(entityData, entity);
 		DeserializeComponent<BoxCollider2DComponent>(entityData, entity);
+		DeserializeComponent<CircleCollider2DComponent>(entityData, entity);
 
 		return result;
 	}

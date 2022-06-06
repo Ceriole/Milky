@@ -44,8 +44,7 @@ namespace Milky {
 		bool entityDeleted = false;
 		if (ImGui::BeginPopupContextItem())
 		{
-			if (m_Context->Selection->Count(SelectionType::Entity) == 0 || m_Context->Selection->Has(entity.GetUUID()))
-				EditorUtils::ShowEntityMenuItems(m_Context, entity, entityDeleted);
+			EditorUtils::ShowEntityMenuItems(m_Context, entity, entityDeleted);
 			ImGui::EndPopup();
 		}
 

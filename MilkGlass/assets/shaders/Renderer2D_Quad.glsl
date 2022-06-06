@@ -1,4 +1,6 @@
-// Basic 2D texture shader
+// = Milky ===============
+// Renderer 2D quad shader
+// =======================
 
 #type vertex
 #version 450 core
@@ -96,6 +98,7 @@ void main()
 		case 30: texColor *= texture(u_Textures[30], Input.TexCoord * Input.TilingFactor); break;
 		case 31: texColor *= texture(u_Textures[31], Input.TexCoord * Input.TilingFactor); break;
 	}
+
 	o_Color = texColor;
 	o_EntityID = v_EntityID;
 }

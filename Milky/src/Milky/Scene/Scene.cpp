@@ -13,6 +13,7 @@
 #include <box2d/b2_body.h>
 #include <box2d/b2_fixture.h>
 #include <box2d/b2_polygon_shape.h>
+#include <box2d/b2_circle_shape.h>
 
 namespace Milky {
 
@@ -78,10 +79,12 @@ namespace Milky {
 
 		CopyComponent<TransformComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<SpriteRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<CircleRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CameraComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<NativeScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<RigidBody2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<BoxCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<CircleCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 
 		return newScene;
 	}
@@ -105,7 +108,7 @@ namespace Milky {
 		m_Registry.destroy(entity);
 	}
 
-	void Scene::DestroyEntities(const std::vector<Entity> entities)
+	void Scene::DestroyEntities(const std::vector<Entity>& entities)
 	{
 		for(Entity entity : entities)
 			m_Registry.destroy(entity);
@@ -113,16 +116,18 @@ namespace Milky {
 
 	void Scene::DuplicateEntity(Entity entity)
 	{
-		Entity newEntity = CreateEntity("copy of " + entity.GetName());
+		Entity newEntity = CreateEntity(entity.GetName());
 		CopyComponentIfExists<TransformComponent>(newEntity, entity);
 		CopyComponentIfExists<SpriteRendererComponent>(newEntity, entity);
+		CopyComponentIfExists<CircleRendererComponent>(newEntity, entity);
 		CopyComponentIfExists<CameraComponent>(newEntity, entity);
 		CopyComponentIfExists<NativeScriptComponent>(newEntity, entity);
 		CopyComponentIfExists<RigidBody2DComponent>(newEntity, entity);
 		CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
+		CopyComponentIfExists<CircleCollider2DComponent>(newEntity, entity);
 	}
 
-	void Scene::DuplicateEntities(const std::vector<Entity> entities)
+	void Scene::DuplicateEntities(const std::vector<Entity>& entities)
 	{
 		for (Entity entity : entities)
 			DuplicateEntity(entity);
@@ -139,7 +144,7 @@ namespace Milky {
 		return {};
 	}
 
-	const std::vector<Entity> Scene::GetEntities(const std::vector<UUID> uuids)
+	const std::vector<Entity> Scene::GetEntities(const std::vector<UUID>& uuids)
 	{
 		std::vector<Entity> result;
 		if (uuids.empty())
@@ -176,14 +181,31 @@ namespace Milky {
 				auto& bc2dc = entity.GetComponent<BoxCollider2DComponent>();
 
 				b2PolygonShape boxShape;
-				boxShape.SetAsBox(bc2dc.Size.x * tc.Scale.x, bc2dc.Size.y * tc.Scale.y);
-
+				boxShape.SetAsBox(bc2dc.Size.x * tc.Scale.x, bc2dc.Size.y * tc.Scale.y, { bc2dc.Offset.x, bc2dc.Offset.y }, 0.0f);
+				
 				b2FixtureDef fixtureDef;
 				fixtureDef.shape = &boxShape;
 				fixtureDef.density = bc2dc.Density;
 				fixtureDef.friction = bc2dc.Friction;
 				fixtureDef.restitution = bc2dc.Restitution;
 				fixtureDef.restitutionThreshold = bc2dc.RestitutionThreshold;
+				body->CreateFixture(&fixtureDef);
+			}
+
+			if (entity.HasComponent<CircleCollider2DComponent>())
+			{
+				auto& cc2dc = entity.GetComponent<CircleCollider2DComponent>();
+
+				b2CircleShape circleShape;
+				circleShape.m_p.Set(cc2dc.Offset.x, cc2dc.Offset.y);
+				circleShape.m_radius = (tc.Scale.x + tc.Scale.y) * 0.5f * cc2dc.Radius;
+
+				b2FixtureDef fixtureDef;
+				fixtureDef.shape = &circleShape;
+				fixtureDef.density = cc2dc.Density;
+				fixtureDef.friction = cc2dc.Friction;
+				fixtureDef.restitution = cc2dc.Restitution;
+				fixtureDef.restitutionThreshold = cc2dc.RestitutionThreshold;
 				body->CreateFixture(&fixtureDef);
 			}
 		}
@@ -248,14 +270,25 @@ namespace Milky {
 		{
 			Renderer2D::BeginScene(mainCamera->GetProjection(), *cameraTransform);
 
-			auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-			int squares = 0;
-			for (auto entity : group)
+			// Sprites
 			{
-				auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-				Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+				auto view = m_Registry.view<TransformComponent, SpriteRendererComponent>();
+				for (auto entity : view)
+				{
+					auto [transform, sprite] = view.get<TransformComponent, SpriteRendererComponent>(entity);
+					Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+				}
 			}
 
+			// Circles
+			{
+				auto view = m_Registry.view<TransformComponent, CircleRendererComponent>();
+				for (auto entity : view)
+				{
+					auto [transform, circle] = view.get<TransformComponent, CircleRendererComponent>(entity);
+					Renderer2D::DrawCircle(transform.GetTransform(), circle, (int)entity);
+				}
+			}
 			Renderer2D::EndScene();
 		}
 	}
@@ -264,12 +297,24 @@ namespace Milky {
 	{
 		Renderer2D::BeginScene(camera);
 
-		auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-		int squares = 0;
-		for (auto entity : group)
+		// Sprites
 		{
-			auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-			Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+			auto view = m_Registry.view<TransformComponent, SpriteRendererComponent>();
+			for (auto entity : view)
+			{
+				auto [transform, sprite] = view.get<TransformComponent, SpriteRendererComponent>(entity);
+				Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+			}
+		}
+
+		// Circles
+		{
+			auto view = m_Registry.view<TransformComponent, CircleRendererComponent>();
+			for (auto entity : view)
+			{
+				auto [transform, circle] = view.get<TransformComponent, CircleRendererComponent>(entity);
+				Renderer2D::DrawCircle(transform.GetTransform(), circle, (int)entity);
+			}
 		}
 
 		Renderer2D::EndScene();
@@ -285,6 +330,15 @@ namespace Milky {
 				return Entity{ entity, this };
 		}
 		return {};
+	}
+
+	const std::vector<Entity> Scene::GetAllEntities()
+	{
+		std::vector<Entity> entities;
+		auto idView = m_Registry.view<IDComponent>();
+		for (auto e : idView)
+			entities.push_back({ e, this });
+		return entities;
 	}
 
 	size_t Scene::GetNumEntites()
@@ -335,6 +389,10 @@ namespace Milky {
 	{}
 
 	template<>
+	void Scene::OnComponentAdded<CircleRendererComponent>(Entity entity, CircleRendererComponent& component)
+	{}
+
+	template<>
 	void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component)
 	{}
 
@@ -348,6 +406,10 @@ namespace Milky {
 
 	template<>
 	void Scene::OnComponentAdded<BoxCollider2DComponent>(Entity entity, BoxCollider2DComponent& component)
+	{}
+
+	template<>
+	void Scene::OnComponentAdded<CircleCollider2DComponent>(Entity entity, CircleCollider2DComponent& component)
 	{}
 
 }

@@ -142,6 +142,9 @@ namespace Milky {
 		case Key::R:
 			m_Context->GizmoType = ImGuizmo::OPERATION::SCALE;
 			break;
+		case Key::G:
+			m_Context->GizmoMode = m_Context->GizmoMode == ImGuizmo::MODE::LOCAL ? ImGuizmo::MODE::WORLD : ImGuizmo::MODE::LOCAL;
+			break;
 		}
 
 		return false;

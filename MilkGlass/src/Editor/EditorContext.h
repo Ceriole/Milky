@@ -33,6 +33,7 @@ namespace Milky {
 		EditorState State;
 		int GizmoType = -1;
 		int GizmoMode = 0;
+		bool DrawColliders = true;
 
 	public:
 		void NewScene();

@@ -38,6 +38,7 @@ namespace Milky {
 #endif
 
 		glEnable(GL_BLEND);
+		glEnable(GL_CULL_FACE);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glEnable(GL_DEPTH_TEST);
@@ -63,8 +64,28 @@ namespace Milky {
 	void OpenGLRendererAPI::DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount)
 	{
 		uint32_t count = indexCount ? indexCount : vertexArray->GetIndexBuffer()->GetCount();
+		vertexArray->Bind();
 		glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
-		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	void OpenGLRendererAPI::DrawLines(const Ref<VertexArray>& vertexArray, uint32_t vertexCount)
+	{
+		vertexArray->Bind();
+		glDrawArrays(GL_LINES, 0, vertexCount);
+	}
+
+	void OpenGLRendererAPI::DrawLineLoops(const Ref<VertexArray>& vertexArray, int loopLength, uint32_t count)
+	{
+		vertexArray->Bind();
+		for (uint32_t i = 0; i < count; i++)
+		{
+			glDrawArrays(GL_LINE_LOOP, i * loopLength, loopLength);
+		}
+	}
+
+	void OpenGLRendererAPI::SetLineWidth(float width)
+	{
+		glLineWidth(width);
 	}
 
 }

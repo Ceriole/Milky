@@ -249,7 +249,7 @@ namespace Milky {
 				if (module.GetCompilationStatus() != shaderc_compilation_status_success)
 				{
 					ML_CORE_ERROR(module.GetErrorMessage());
-					ML_CORE_ASSERT(false);
+					ML_CORE_ASSERT(false, "Shader compilation failure!");
 				}
 
 				shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
@@ -312,7 +312,7 @@ namespace Milky {
 				if (module.GetCompilationStatus() != shaderc_compilation_status_success)
 				{
 					ML_CORE_ERROR(module.GetErrorMessage());
-					ML_CORE_ASSERT(false);
+					ML_CORE_ASSERT(false, "Shader compilation failure!");
 				}
 
 				shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());

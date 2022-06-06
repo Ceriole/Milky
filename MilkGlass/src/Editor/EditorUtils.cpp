@@ -31,6 +31,11 @@ namespace Milky {
 					Entity entity = context->ActiveScene->CreateEntity("New Square");
 					entity.AddComponent<SpriteRendererComponent>();
 				}
+				if (ImGui::MenuItem("Circle"))
+				{
+					Entity entity = context->ActiveScene->CreateEntity("New Circle");
+					entity.AddComponent<CircleRendererComponent>();
+				}
 				if (ImGui::BeginMenu("Camera"))
 				{
 					if (ImGui::MenuItem("Orthographic"))
@@ -56,9 +61,9 @@ namespace Milky {
 		void ShowEntityMenuItems(const Ref<EditorContext>& context, Entity entity, bool& entityDeleted)
 		{
 			ImGui::BeginDisabled(context->State != EditorState::Edit);
-			if (ImGui::MenuItemEx("Duplicate", ICON_FA_CLONE))
+			if (ImGui::MenuItemEx("Duplicate", ICON_FA_CLONE, "Ctrl+D"))
 				context->ActiveScene->DuplicateEntity(entity);
-			if (ImGui::MenuItemEx("Delete", ICON_FA_TRASH))
+			if (ImGui::MenuItemEx("Delete", ICON_FA_TRASH, "Del"))
 				entityDeleted = true;
 			ImGui::EndDisabled();
 		}
@@ -66,9 +71,9 @@ namespace Milky {
 		void ShowMultiEntityMenuItems(const Ref<EditorContext>& context, bool& entitiesDeleted)
 		{
 			ImGui::BeginDisabled(context->State != EditorState::Edit);
-			if (ImGui::MenuItemEx("Duplicate All", ICON_FA_CLONE))
+			if (ImGui::MenuItemEx("Duplicate All", ICON_FA_CLONE, "Ctrl+D"))
 				context->ActiveScene->DuplicateEntities(context->ActiveScene->GetEntities(context->Selection->GetAll()));
-			if (ImGui::MenuItemEx("Delete All", ICON_FA_TRASH))
+			if (ImGui::MenuItemEx("Delete All", ICON_FA_TRASH, "Del"))
 				entitiesDeleted = true;
 			ImGui::EndDisabled();
 		}
@@ -76,7 +81,7 @@ namespace Milky {
 		void ShowAddComponentMenuItems(const Ref<EditorContext>& context, Entity entity)
 		{
 			ImGui::BeginDisabled(context->State != EditorState::Edit);
-			if (ImGui::MenuItem("Camera", NULL, false, !entity.HasComponent<CameraComponent>()))
+			if (ImGui::MenuItemEx("Camera", ICON_FA_VIDEO, NULL, false, !entity.HasComponent<CameraComponent>()))
 			{
 				if (!entity.HasComponent<CameraComponent>())
 					entity.AddComponent<CameraComponent>();
@@ -84,7 +89,7 @@ namespace Milky {
 					ML_CORE_WARN("This entity already has a Camera Component!");
 				ImGui::CloseCurrentPopup();
 			}
-			if (ImGui::MenuItem("Sprite Renderer", NULL, false, !entity.HasComponent<SpriteRendererComponent>()))
+			if (ImGui::MenuItemEx("Sprite Renderer", ICON_FA_IMAGES, NULL, false, !entity.HasComponent<SpriteRendererComponent>()))
 			{
 				if (!entity.HasComponent<SpriteRendererComponent>())
 					entity.AddComponent<SpriteRendererComponent>();
@@ -92,7 +97,15 @@ namespace Milky {
 					ML_CORE_WARN("This entity already has a Sprite Renderer Component!");
 				ImGui::CloseCurrentPopup();
 			}
-			if (ImGui::MenuItem("Rigid Body 2D", NULL, false, !entity.HasComponent<RigidBody2DComponent>()))
+			if (ImGui::MenuItemEx("Circle Renderer", ICON_FA_CIRCLE, NULL, false, !entity.HasComponent<CircleRendererComponent>()))
+			{
+				if (!entity.HasComponent<CircleRendererComponent>())
+					entity.AddComponent<CircleRendererComponent>();
+				else
+					ML_CORE_WARN("This entity already has a Circle Renderer Component!");
+				ImGui::CloseCurrentPopup();
+			}
+			if (ImGui::MenuItemEx("2D Rigid Body", ICON_FA_SHAPES, NULL, false, !entity.HasComponent<RigidBody2DComponent>()))
 			{
 				if (!entity.HasComponent<RigidBody2DComponent>())
 					entity.AddComponent<RigidBody2DComponent>();
@@ -100,12 +113,20 @@ namespace Milky {
 					ML_CORE_WARN("This entity already has a Rigid Body 2D Component!");
 				ImGui::CloseCurrentPopup();
 			}
-			if (ImGui::MenuItem("Box Collider 2D", NULL, false, !entity.HasComponent<BoxCollider2DComponent>()))
+			if (ImGui::MenuItemEx("2D Box Collider", ICON_FA_VECTOR_SQUARE, NULL, false, !entity.HasComponent<BoxCollider2DComponent>()))
 			{
 				if (!entity.HasComponent<BoxCollider2DComponent>())
 					entity.AddComponent<BoxCollider2DComponent>();
 				else
 					ML_CORE_WARN("This entity already has a Box Collider 2D Component!");
+				ImGui::CloseCurrentPopup();
+			}
+			if (ImGui::MenuItemEx("2D Circle Collider", ICON_FA_CIRCLE_NOTCH, NULL, false, !entity.HasComponent<CircleCollider2DComponent>()))
+			{
+				if (!entity.HasComponent<CircleCollider2DComponent>())
+					entity.AddComponent<CircleCollider2DComponent>();
+				else
+					ML_CORE_WARN("This entity already has a Circle Collider 2D Component!");
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndDisabled();
@@ -234,7 +255,14 @@ namespace Milky {
 					UIControls::ShowFloatControl("Tiling Factor", &component.TilingFactor);
 				});
 
-			ShowComponent<RigidBody2DComponent>(context, ICON_FA_OBJECT_GROUP " Rigid Body 2D", entity, [](RigidBody2DComponent& component)
+			ShowComponent<CircleRendererComponent>(context, ICON_FA_CIRCLE " Circle Renderer", entity, [](CircleRendererComponent& component)
+				{
+					UIControls::ShowColorControl("Color", component.Color);
+					UIControls::ShowFloatControl("Thickness", &component.Thickness, 1.0f, 0.01f, 0.0f, 1.0f);
+					UIControls::ShowFloatControl("Fade", &component.Fade, 0.0f, 0.01f, 0.0f, 1.0f);
+				});
+
+			ShowComponent<RigidBody2DComponent>(context, ICON_FA_SHAPES " 2D Rigid Body", entity, [](RigidBody2DComponent& component)
 				{
 					int bodyType = (int)component.Type;
 					if (UIControls::ShowComboControl("Type", { "Static", "Dynamic", "Kinematic" }, bodyType))
@@ -242,10 +270,22 @@ namespace Milky {
 					UIControls::ShowBoolControl("Fixed Rotation", &component.FixedRotation);
 				});
 
-			ShowComponent<BoxCollider2DComponent>(context, ICON_FA_VECTOR_SQUARE " Box Collider 2D", entity, [](BoxCollider2DComponent& component)
+			ShowComponent<BoxCollider2DComponent>(context, ICON_FA_VECTOR_SQUARE " 2D Box Collider", entity, [](BoxCollider2DComponent& component)
 				{
 					UIControls::ShowXYControl("Offset", component.Offset);
-					UIControls::ShowXYControl("Size", component.Size, 0.5f);
+					UIControls::ShowXYControl("Size", component.Size, 1.0f);
+
+					UIControls::ShowFloatControl("Density", &component.Density, 1.0f, 0.01f, 0.0f, 1.0f);
+					UIControls::ShowFloatControl("Friction", &component.Friction, 0.5f, 0.01f, 0.0f, 1.0f);
+					UIControls::ShowFloatControl("Restitution", &component.Restitution, 0.0f, 0.01f, 0.0f, 1.0f);
+					UIControls::ShowFloatControl("Restitution\nThreshold", &component.RestitutionThreshold, 0.5f, 0.01f, 0.0f);
+				});
+
+			ShowComponent<CircleCollider2DComponent>(context, ICON_FA_CIRCLE_NOTCH " 2D Circle Collider", entity, [](CircleCollider2DComponent& component)
+				{
+					UIControls::ShowXYControl("Offset", component.Offset);
+					UIControls::ShowFloatControl("Radius", &component.Radius, 0.5f);
+
 					UIControls::ShowFloatControl("Density", &component.Density, 1.0f, 0.01f, 0.0f, 1.0f);
 					UIControls::ShowFloatControl("Friction", &component.Friction, 0.5f, 0.01f, 0.0f, 1.0f);
 					UIControls::ShowFloatControl("Restitution", &component.Restitution, 0.0f, 0.01f, 0.0f, 1.0f);

@@ -39,6 +39,7 @@ namespace Milky {
 		m_ContentBrowserPanel = new ContentBrowserPanel(	m_Context, "Content Browser",	ICON_FA_ARCHIVE,	"");
 		m_StatsPanel = new StatsPanel(						m_Context, "Stats",				ICON_FA_CODE,		"");
 		m_ToolbarPanel = new ToolbarPanel(					m_Context, "Toolbar",			"",					"");
+		m_SettingsPanel = new SettingsPanel(				m_Context, "Settings",			ICON_FA_COGS,		"");
 
 		m_Panels.push_back(m_ViewportPanel);
 		m_Panels.push_back(m_SceneHierarchyPanel);
@@ -46,6 +47,7 @@ namespace Milky {
 		m_Panels.push_back(m_ContentBrowserPanel);
 		m_Panels.push_back(m_StatsPanel);
 		m_Panels.push_back(m_ToolbarPanel);
+		m_Panels.push_back(m_SettingsPanel);
 
 		auto commandLineArgs = Application::Get().GetCommandLineArgs();
 		if (commandLineArgs.Count > 1)
@@ -95,6 +97,8 @@ namespace Milky {
 
 		for (auto& p : m_Panels)
 			p->OnUpdate(ts);
+
+		OnOverlayRender();
 
 		m_Context->Framebuffer->Unbind();
 	}
@@ -162,13 +166,18 @@ namespace Milky {
 		ImGuiID dock_id_properties = NULL;
 		ImGuiID dock_id_scene_hierarchy = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Up, 0.60f, NULL, &dock_id_properties);
 
+		ImGuiID dock_id_stats = NULL;
+		ImGuiID dock_id_settings = ImGui::DockBuilderSplitNode(dock_id_right, ImGuiDir_Up, 0.50f, NULL, &dock_id_stats);
+
 		ImGui::DockBuilderDockWindow(m_ViewportPanel->TabTitle(), dock_viewport_id);
 		
 		ImGui::DockBuilderDockWindow(m_SceneHierarchyPanel->TabTitle(), dock_id_scene_hierarchy);
 		ImGui::DockBuilderDockWindow(m_PropertiesPanel->TabTitle(), dock_id_properties);
 		
 		ImGui::DockBuilderDockWindow(m_ContentBrowserPanel->TabTitle(), dock_id_down);
-		ImGui::DockBuilderDockWindow(m_StatsPanel->TabTitle(), dock_id_right);
+
+		ImGui::DockBuilderDockWindow(m_StatsPanel->TabTitle(), dock_id_stats);
+		ImGui::DockBuilderDockWindow(m_SettingsPanel->TabTitle(), dock_id_settings);
 
 		ImGui::DockBuilderDockWindow(m_ToolbarPanel->TabTitle(), dock_id_toolbar);
 		ImGui::DockBuilderGetNode(dock_id_toolbar)->WantHiddenTabBarToggle = true;
@@ -227,6 +236,8 @@ namespace Milky {
 		if (ImGui::BeginMenu("Scene"))
 		{
 			EditorUtils::ShowNewEntityMenu(m_Context);
+			ImGui::Separator();
+			if (ImGui::MenuItem("Show Colliders", "Shift+C", m_Context->DrawColliders)) m_Context->DrawColliders = !m_Context->DrawColliders;
 			ImGui::EndMenu();
 		}
 	}
@@ -334,6 +345,57 @@ namespace Milky {
 
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<KeyPressedEvent>(ML_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
+	}
+
+	void EditorLayer::OnOverlayRender()
+	{
+		if (!m_Context->DrawColliders)
+			return;
+		constexpr glm::vec4 colliderColor = glm::vec4(0.1f, 0.7f, 0.2f, 1);
+		constexpr float zOffset = 0.02f;
+		float camZ;
+		if (m_Context->State == EditorState::Play)
+		{
+			Entity camEntity = m_Context->ActiveScene->GetPrimaryCameraEntity();
+			if (!camEntity)
+				return;
+			Camera cam = camEntity.GetComponent<CameraComponent>().Camera;
+			Renderer2D::BeginScene(cam, camEntity.GetTransform().GetTransform());
+			camZ = camEntity.GetTransform().Translation.z;
+		}
+		else
+		{
+			Renderer2D::BeginScene(*m_Context->Camera.get());
+			camZ = m_Context->Camera->GetPosition().z;
+		}
+		float oldLineWidth = Renderer2D::GetLineWidth();
+		Renderer2D::SetLineWidth(5.0f);
+		// Circles
+		auto ccView = m_Context->ActiveScene->GetAllEntitiesWith<TransformComponent, CircleCollider2DComponent>();
+		for (auto entity : ccView)
+		{
+			auto [tc, cc2d] = ccView.get<TransformComponent, CircleCollider2DComponent>(entity);
+			glm::vec3 translation = tc.Translation + glm::vec3(cc2d.Offset, camZ > tc.Translation.z ? zOffset : -zOffset);
+			glm::vec3 scale = tc.Scale * glm::vec3(cc2d.Radius * 2.0f);
+			glm::mat4 transform = glm::translate(glm::mat4(1.0f), translation)
+				* glm::scale(glm::mat4(1.0f), scale);
+			Renderer2D::DrawLineCircle(transform, colliderColor);
+		}
+		// BoxColliders
+		auto bcView = m_Context->ActiveScene->GetAllEntitiesWith<TransformComponent, BoxCollider2DComponent>();
+		for (auto entity : bcView)
+		{
+			auto [tc, bc2d] = bcView.get<TransformComponent, BoxCollider2DComponent>(entity);
+			glm::vec3 translation = tc.Translation + glm::vec3(bc2d.Offset, camZ > tc.Translation.z ? zOffset : -zOffset);
+			glm::vec3 scale = tc.Scale * glm::vec3(bc2d.Size * 2.0f, 1.0f);
+			glm::mat4 transform = glm::translate(glm::mat4(1.0f), translation)
+				* glm::rotate(glm::mat4(1.0f), tc.Rotation.z, glm::vec3(0.0f, 0.0f, 1.0f))
+				* glm::scale(glm::mat4(1.0f), scale);
+			Renderer2D::DrawRect(transform, colliderColor);
+		}
+
+		Renderer2D::EndScene();
+		Renderer2D::SetLineWidth(oldLineWidth);
 	}
 
 	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)

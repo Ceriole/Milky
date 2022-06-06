@@ -26,13 +26,13 @@ namespace Milky {
 		Entity CreateEntity(const std::string& name = std::string());
 
 		void DestroyEntity(Entity entity);
-		void DestroyEntities(const std::vector<Entity> entities);
+		void DestroyEntities(const std::vector<Entity>& entities);
 
 		void DuplicateEntity(Entity entity);
-		void DuplicateEntities(const std::vector<Entity> entities);
+		void DuplicateEntities(const std::vector<Entity>& entities);
 
 		Entity GetEntity(UUID uuid);
-		const std::vector<Entity> GetEntities(const std::vector<UUID> uuids);
+		const std::vector<Entity> GetEntities(const std::vector<UUID>& uuids);
 
 		void OnRuntimeStart();
 		void OnRuntimeStop();
@@ -46,6 +46,12 @@ namespace Milky {
 		template<typename Comp>
 		void OnComponentAdded(Entity entity, Comp& component);
 
+		const std::vector<Entity> GetAllEntities();
+		template<typename ...Comps>
+		auto GetAllEntitiesWith()
+		{
+			return m_Registry.view<Comps...>();
+		}
 		size_t GetNumEntites();
 	private:
 		entt::registry m_Registry;

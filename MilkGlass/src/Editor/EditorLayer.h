@@ -9,6 +9,7 @@
 #include "Panels/ContentBrowserPanel.h"
 #include "Panels/StatsPanel.h"
 #include "Panels/ToolbarPanel.h"
+#include "Panels/SettingsPanel.h"
 
 #include <imgui/imgui.h>
 #include <ImGuizmo.h>
@@ -27,6 +28,8 @@ namespace Milky {
 		virtual void OnImGuiRender() override;
 		virtual void OnEvent(Event& e) override;
 	private:
+		void OnOverlayRender();
+
 		void SetEditorDefaultDockLayout();
 		void ShowEditorMenuBar();
 
@@ -52,6 +55,7 @@ namespace Milky {
 		ContentBrowserPanel* m_ContentBrowserPanel = nullptr;
 		StatsPanel* m_StatsPanel = nullptr;
 		ToolbarPanel* m_ToolbarPanel = nullptr;
+		SettingsPanel* m_SettingsPanel = nullptr;
 
 		bool m_ShowWelcome = false, m_ShowHelp = false, m_ShowAbout = false;
 	};

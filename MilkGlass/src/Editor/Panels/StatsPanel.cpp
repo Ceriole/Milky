@@ -30,6 +30,16 @@ namespace Milky {
 				ImGui::Text("%d", stats.QuadCount);
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
+				ImGui::Text("Circles");
+				ImGui::TableNextColumn();
+				ImGui::Text("%d", stats.CircleCount);
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
+				ImGui::Text("Lines");
+				ImGui::TableNextColumn();
+				ImGui::Text("%d", stats.LineCount);
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
 				ImGui::Text("Vertices");
 				ImGui::TableNextColumn();
 				ImGui::Text("%d", stats.GetTotalVertexCount());
